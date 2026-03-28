@@ -1,0 +1,277 @@
+const express = require('express');
+const cors = require('cors');
+const bcrypt = require('bcryptjs');
+const path = require('path');
+const db = require('./db');
+
+const app = express();
+
+// Middlewares
+app.use(cors());
+app.use(express.json());
+
+// Servir archivos estáticos del frontend (para Glitch)
+app.use(express.static(path.join(__dirname, '../public')));
+
+// =======================
+// AUTHENTICATION & USUARIOS
+// =======================
+
+// Crear Admin por defecto automáticamente si la tabla está vacía
+const createDefaultAdmin = async () => {
+    try {
+        const [rows] = await db.query('SELECT * FROM usuarios WHERE username = "admin"');
+        if (rows.length === 0) {
+            const hash = await bcrypt.hash('admin123', 10);
+            const fecha = new Date().toISOString().split('T')[0];
+            await db.query(`INSERT INTO usuarios (id, nombre, correo, username, password, rol, estado, fecha_registro) 
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, 
+                            ['U-ADMIN', 'Administrador Principal', 'admin@epresedi.com', 'admin', hash, 'Administrador', 'Activo', fecha]);
+            console.log('✅ Usuario Administrador por defecto creado (Usuario: admin, Clave: admin123)');
+        }
+    } catch(e) { console.error('Error verificando admin', e); }
+};
+createDefaultAdmin();
+
+app.post('/api/login', async (req, res) => {
+    const { username, password } = req.body;
+    try {
+        const [rows] = await db.query('SELECT * FROM usuarios WHERE username = ?', [username]);
+        if (rows.length > 0) {
+            const user = rows[0];
+            if(user.estado !== 'Activo') return res.status(403).json({ success: false, message: 'Usuario inactivo' });
+            
+            const match = await bcrypt.compare(password, user.password);
+            if(match) {
+                delete user.password; // No enviar la contraseña encriptada al frontend
+                return res.json({ success: true, user });
+            }
+        }
+        res.status(401).json({ success: false, message: 'Usuario o contraseña incorrectos' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// CRUD Usuarios
+app.get('/api/usuarios', async (req, res) => {
+    try {
+        const [rows] = await db.query('SELECT id, nombre, correo, username, rol, estado, fecha_registro FROM usuarios ORDER BY nombre ASC');
+        res.json(rows);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/usuarios', async (req, res) => {
+    try {
+        const u = req.body;
+        const [exist] = await db.query('SELECT username FROM usuarios WHERE username = ?', [u.username]);
+        if (exist.length > 0) return res.status(400).json({ error: 'El nombre de usuario ya existe' });
+
+        const hash = await bcrypt.hash(u.password, 10);
+        const id = 'U-' + Date.now();
+        await db.query(`INSERT INTO usuarios (id, nombre, correo, username, password, rol, estado, fecha_registro) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, 
+        [id, u.nombre, u.correo, u.username, hash, u.rol, u.estado, u.fecha_registro]);
+        
+        res.json({ id, ...u, password: null });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.put('/api/usuarios/:id', async (req, res) => {
+    try {
+        const u = req.body;
+        // Si mandan password, lo actualizamos, sino dejamos el existente
+        if (u.password && u.password.trim() !== '') {
+            const hash = await bcrypt.hash(u.password, 10);
+            await db.query(`UPDATE usuarios SET nombre=?, correo=?, username=?, password=?, rol=?, estado=? WHERE id=?`, 
+            [u.nombre, u.correo, u.username, hash, u.rol, u.estado, req.params.id]);
+        } else {
+            await db.query(`UPDATE usuarios SET nombre=?, correo=?, username=?, rol=?, estado=? WHERE id=?`, 
+            [u.nombre, u.correo, u.username, u.rol, u.estado, req.params.id]);
+        }
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.delete('/api/usuarios/:id', async (req, res) => {
+    try {
+        await db.query('DELETE FROM usuarios WHERE id = ?', [req.params.id]);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// =======================
+// CLIENTES (CRUD)
+// =======================
+app.get('/api/clientes', async (req, res) => {
+    try {
+        const [rows] = await db.query('SELECT * FROM clientes ORDER BY nombre ASC');
+        res.json(rows);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/clientes', async (req, res) => {
+    try {
+        const c = req.body;
+        const id = 'C' + Date.now();
+        await db.query(`INSERT INTO clientes (id, tipo_persona, estado, nombre, tipo_doc, nit, fecha_registro, telefono, correo, direccion, ciudad, departamento, codigo_postal) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
+        [id, c.tipo_persona, c.estado, c.nombre, c.tipo_doc, c.nit, c.fecha_registro, c.telefono, c.correo, c.direccion, c.ciudad, c.departamento, c.codigo_postal]);
+        res.json({ id, ...c });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.put('/api/clientes/:id', async (req, res) => {
+    try {
+        const c = req.body;
+        await db.query(`UPDATE clientes SET tipo_persona=?, estado=?, nombre=?, tipo_doc=?, nit=?, fecha_registro=?, telefono=?, correo=?, direccion=?, ciudad=?, departamento=?, codigo_postal=? WHERE id=?`, 
+        [c.tipo_persona, c.estado, c.nombre, c.tipo_doc, c.nit, c.fecha_registro, c.telefono, c.correo, c.direccion, c.ciudad, c.departamento, c.codigo_postal, req.params.id]);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.delete('/api/clientes/:id', async (req, res) => {
+    try {
+        await db.query('DELETE FROM clientes WHERE id = ?', [req.params.id]);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// =======================
+// PRODUCTOS (CRUD)
+// =======================
+app.get('/api/productos', async (req, res) => {
+    try {
+        const [rows] = await db.query('SELECT * FROM productos ORDER BY codigo ASC');
+        res.json(rows);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/productos', async (req, res) => {
+    try {
+        const { codigo, nombre } = req.body;
+        const id = 'P' + Date.now();
+        await db.query('INSERT INTO productos (id, codigo, nombre) VALUES (?, ?, ?)', [id, codigo, nombre]);
+        res.json({ id, codigo, nombre });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.put('/api/productos/:id', async (req, res) => {
+    try {
+        const { codigo, nombre } = req.body;
+        await db.query('UPDATE productos SET codigo=?, nombre=? WHERE id=?', [codigo, nombre, req.params.id]);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.delete('/api/productos/:id', async (req, res) => {
+    try {
+        await db.query('DELETE FROM productos WHERE id = ?', [req.params.id]);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// =======================
+// INMUEBLES (CRUD)
+// =======================
+app.get('/api/inmuebles', async (req, res) => {
+    try {
+        const [rows] = await db.query('SELECT * FROM inmuebles ORDER BY id DESC');
+        res.json(rows);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/inmuebles', async (req, res) => {
+    try {
+        const { direccion, tipo, precio, estado, clienteId } = req.body;
+        const id = 'I' + Date.now();
+        await db.query('INSERT INTO inmuebles (id, direccion, tipo, precio, estado, clienteId) VALUES (?, ?, ?, ?, ?, ?)', 
+        [id, direccion, tipo, precio || 0, estado || 'Disponible', clienteId || null]);
+        res.json({ id, direccion, tipo, precio, estado, clienteId });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.put('/api/inmuebles/:id', async (req, res) => {
+    try {
+        const { direccion, tipo, precio, estado, clienteId } = req.body;
+        await db.query('UPDATE inmuebles SET direccion=?, tipo=?, precio=?, estado=?, clienteId=? WHERE id=?', 
+        [direccion, tipo, precio, estado, clienteId || null, req.params.id]);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.delete('/api/inmuebles/:id', async (req, res) => {
+    try {
+        await db.query('DELETE FROM inmuebles WHERE id = ?', [req.params.id]);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// =======================
+// FACTURAS
+// =======================
+app.get('/api/facturas', async (req, res) => {
+    try {
+        // Necesitamos devolver la factura con sus ítems
+        const [facturas] = await db.query('SELECT * FROM facturas ORDER BY id DESC');
+        const [items] = await db.query('SELECT * FROM factura_items');
+        
+        // Empaquetar los items dentro de cada factura para mantener el formato del frontend actual
+        const result = facturas.map(f => {
+            f.items = items.filter(i => i.factura_id === f.id);
+            return f;
+        });
+        
+        res.json(result);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/facturas', async (req, res) => {
+    const connection = await db.getConnection();
+    try {
+        await connection.beginTransaction();
+        
+        const f = req.body; // factura
+        const [rows] = await connection.query('SELECT COUNT(*) as count FROM facturas');
+        const numero = parseInt(rows[0].count) + 9227; 
+        const facturaId = 'FV-' + numero;
+        
+        await connection.query(`INSERT INTO facturas (id, fecha, clienteId, cliente, nit, contacto, total, estado) 
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                                [facturaId, f.fecha, f.clienteId || null, f.cliente, f.nit, f.contacto, f.total, f.estado || 'emitida']);
+        
+        for (const item of f.items) {
+            const itemId = 'FI-' + Date.now() + Math.floor(Math.random() * 1000);
+            await connection.query(`INSERT INTO factura_items (id, factura_id, codigo, descripcion, cantidad, valorUnitario, total) 
+                                    VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                                    [itemId, facturaId, item.codigo, item.descripcion, item.cantidad, item.valorUnitario, item.total]);
+        }
+        
+        await connection.commit();
+        res.json({ id: facturaId, ...f });
+    } catch (err) { 
+        await connection.rollback();
+        res.status(500).json({ error: err.message }); 
+    } finally {
+        connection.release();
+    }
+});
+
+app.delete('/api/facturas/:id', async (req, res) => {
+    try {
+        // CASCADE delete eliminará los items automáticamente si está en el esquema SQL (ON DELETE CASCADE)
+        await db.query('DELETE FROM facturas WHERE id = ?', [req.params.id]);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Ruta comodín: redirige todo lo demás al index.html (SPA)
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/index.html'));
+});
+
+// Iniciar servidor (usa PORT de Glitch o 3000 en local)
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`✅ Servidor ejecutándose en puerto ${PORT}`);
+});

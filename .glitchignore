@@ -1,0 +1,9 @@
+# Ignorar node_modules (Glitch los instala automáticamente)
+node_modules
+server/node_modules
+
+# Ignorar la base de datos local (Glitch creará una nueva)
+server/epresedi.db
+
+# Archivos de desarrollo
+*.bat

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EPRESEDI S.A.S. - Sistema Integral</title>
+    
+    <script>
+        // GLOBAL ERROR HANDLER TO PREVENT SILENT BLANK SCREENS
+        window.addEventListener('error', function(e) {
+            const errDiv = document.createElement('div');
+            errDiv.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,0,0,0.9);color:white;z-index:999999;padding:40px;font-family:monospace;overflow-y:auto;';
+            errDiv.innerHTML = '<h2>Error Crítico de JavaScript</h2>' +
+                               '<p><b>Mensaje:</b> ' + e.message + '</p>' +
+                               '<p><b>Archivo:</b> ' + e.filename + ' (Línea: ' + e.lineno + ')</p>' +
+                               '<hr><p><b>Pila de error:</b><br>' + (e.error && e.error.stack ? e.error.stack.replace(/\\n/g, '<br>') : 'No stack trace') + '</p>' +
+                               '<button onclick="localStorage.clear(); location.reload();" style="margin-top:20px;padding:10px 20px;background:white;color:red;border:none;cursor:pointer;font-weight:bold;">SOLUCIONAR: Borrar Datos Locales y Recargar</button>';
+            document.body.appendChild(errDiv);
+        });
+    </script>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome (Íconos) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                fontFamily: { sans: ['Inter', 'sans-serif'] },
+                extend: {
+                    colors: { brand: { 50: '#f0f9ff', 100: '#e0f2fe', 400: '#38bdf8', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1', 900: '#0c4a6e' } }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .view-section { display: none; animation: fadeIn 0.3s ease; }
+        .view-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; }
+            .print-view { margin: 0 !important; width: 100% !important; max-width: 100% !important; border: none !important; box-shadow: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 flex h-screen overflow-hidden text-gray-800">
+
+    <!-- Menú Lateral -->
+    <aside id="main-sidebar" class="w-56 bg-[#0060d6] text-white flex flex-col no-print shadow-xl relative z-20" style="display: none;">
+        <div class="h-14 flex items-center p-4">
+        </div>
+        
+        <nav class="flex-1 py-4 flex flex-col gap-1 px-1 overflow-y-auto w-full">
+            <a href="#dashboard" class="nav-btn px-3 py-2.5 rounded-r-full text-white font-medium flex items-center gap-3 transition hover:bg-white/10 text-[13px]">
+                <i class="fa-solid fa-house w-5 text-center"></i> Inicio
+            </a>
+            <a href="#facturar" class="nav-btn px-3 py-2.5 text-blue-100 hover:text-white hover:bg-white/10 rounded-r-full font-medium flex items-center gap-3 transition text-[13px]">
+                <i class="fa-solid fa-dollar-sign w-5 text-center"></i> Ventas
+            </a>
+            <a href="#productos" class="nav-btn px-3 py-2.5 text-blue-100 hover:text-white hover:bg-white/10 rounded-r-full font-medium flex items-center gap-3 transition text-[13px]">
+                <i class="fa-solid fa-box w-5 text-center"></i> Catálogo
+            </a>
+            <a href="#clientes" class="nav-btn px-3 py-2.5 text-blue-100 hover:text-white hover:bg-white/10 rounded-r-full font-medium flex items-center gap-3 transition text-[13px]">
+                <i class="fa-solid fa-users w-5 text-center"></i> Clientes
+            </a>
+            <a href="#inmuebles" class="nav-btn px-3 py-2.5 text-blue-100 hover:text-white hover:bg-white/10 rounded-r-full font-medium flex items-center gap-3 transition text-[13px]">
+                <i class="fa-solid fa-boxes-stacked w-5 text-center"></i> Inmuebles
+            </a>
+            <a href="#historial" class="nav-btn px-3 py-2.5 text-blue-100 hover:text-white hover:bg-white/10 rounded-r-full font-medium flex items-center gap-3 transition text-[13px]">
+                <i class="fa-solid fa-chart-bar w-5 text-center"></i> Reportes
+            </a>
+            <a href="#usuarios" id="nav-usuarios" class="nav-btn px-3 py-2.5 text-blue-100 hover:text-white hover:bg-white/10 rounded-r-full font-medium flex items-center gap-3 transition text-[13px]" style="display: none;">
+                <i class="fa-solid fa-user-shield w-5 text-center"></i> Usuarios
+            </a>
+        </nav>
+        
+        <div class="px-4 py-6 text-sm text-blue-100 flex items-center justify-center border-t border-white/10">
+            <button onclick="LoginView.logout()" class="hover:text-white transition flex items-center gap-2" title="Cerrar Sesión">
+                <i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión
+            </button>
+        </div>
+    </aside>
+
+    <!-- Contenido Principal -->
+    <main class="flex-1 flex flex-col h-screen overflow-y-auto w-full relative">
+        <!-- Header Superior -->
+        <header id="main-header" class="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-6 no-print shadow-sm sticky top-0 z-10 w-full" style="display: none;">
+            <div class="flex items-center gap-6">
+                <!-- Epresedi Logo -->
+                <img src="img/logo.png" alt="EPRESEDI S.A.S" class="h-8 w-auto mix-blend-multiply mr-2">
+                <div class="text-[13px] font-bold text-gray-700 uppercase" id="header-title">EPRESEDI SAS</div>
+            </div>
+            <div class="flex items-center gap-5 text-gray-500 text-sm">
+                <div class="relative hidden md:block w-48">
+                    <i class="fa-solid fa-search absolute left-3 top-1 text-blue-600 font-bold" style="font-size: 11px; margin-top: 5px;"></i>
+                    <input type="text" placeholder="Buscar en Epresedi" class="w-full pl-8 pr-3 py-1 bg-[#f4f6f9] border border-transparent rounded-full text-xs text-blue-600 placeholder-blue-600 font-medium focus:bg-white focus:border-blue-400 focus:outline-none transition">
+                </div>
+                <button onclick="window.location.hash='#facturar'" class="bg-[#80c342] hover:bg-[#72b03a] text-white px-4 py-1.5 rounded-md font-bold shadow-sm transition flex items-center gap-1.5 text-sm">
+                    <i class="fa-solid fa-plus text-xs"></i> Crear
+                </button>
+                <button onclick="alert('Para soporte del sistema, por favor contacte a soporte@epresedi.com')" class="font-medium text-blue-600 hover:text-blue-800 transition text-xs flex items-center gap-1 cursor-pointer">
+                    <i class="fa-solid fa-circle-question text-[14px]"></i> Ayuda
+                </button>
+                <div class="flex items-center gap-2 px-2 py-1 border-l border-gray-200 pl-4">
+                    <button id="btn-ajustes" onclick="window.location.hash='#ajustes'" class="hover:text-[#0060d6] transition text-blue-600 outline-none mr-2 hidden" title="Ajustes">
+                        <i class="fa-solid fa-gear text-[15px]"></i>
+                    </button>
+                    <div class="flex items-center gap-2 rounded text-blue-600">
+                        <i class="fa-solid fa-user text-xs"></i>
+                        <span class="text-xs font-bold uppercase" id="active-username">EPRESEDI SAS</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Area de Vistas -->
+        <div id="main-content" class="relative flex-1 w-full max-w-7xl mx-auto">
+            <!-- VISTAS -->
+            <section id="view-login" class="view-section active w-full h-full relative z-50"></section>
+            <section id="view-dashboard" class="view-section w-full"></section>
+            <section id="view-productos" class="view-section w-full"></section>
+            <section id="view-clientes" class="view-section w-full"></section>
+            <section id="view-inmuebles" class="view-section w-full"></section>
+            <section id="view-facturar" class="view-section w-full"></section>
+            <section id="view-historial" class="view-section w-full"></section>
+            <section id="view-usuarios" class="view-section w-full"></section>
+            <section id="view-ajustes" class="view-section w-full"></section>
+        </div>
+    </main>
+
+    <!-- Componente de Alerta (Toast) -->
+    <div id="toast" class="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg font-medium transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center gap-3">
+        <i class="fa-solid fa-check-circle"></i><span id="toast-msg">Acción exitosa</span>
+    </div>
+
+    <!-- Scripts de la Aplicación (Bust Cache) -->
+    <script src="js/store.js?v=5"></script>
+    <script src="js/views/login.js?v=5"></script>
+    <script src="js/views/dashboard.js?v=6"></script>
+    <script src="js/views/productos.js?v=7"></script>
+    <script src="js/views/clientes.js?v=6"></script>
+    <script src="js/views/inmuebles.js?v=6"></script>
+    <script src="js/views/facturacion.js?v=6"></script>
+    <script src="js/views/historial.js?v=6"></script>
+    <script src="js/views/usuarios.js?v=1"></script>
+    <script src="js/views/ajustes.js?v=6"></script>
+    <script src="js/app.js?v=6"></script>
+
+    <script>
+        // GLOBAL ERROR HANDLER TO PREVENT SILENT BLANK SCREENS
+        window.addEventListener('error', function(e) {
+            const errDiv = document.createElement('div');
+            errDiv.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,0,0,0.9);color:white;z-index:999999;padding:40px;font-family:monospace;overflow-y:auto;';
+            errDiv.innerHTML = '<h2>Error Crítico de JavaScript</h2>' +
+                               '<p><b>Mensaje:</b> ' + e.message + '</p>' +
+                               '<p><b>Archivo:</b> ' + e.filename + ' (Línea: ' + e.lineno + ')</p>' +
+                               '<hr><p><b>Pila de error:</b><br>' + (e.error && e.error.stack ? e.error.stack.replace(/\\n/g, '<br>') : 'No stack trace') + '</p>' +
+                               '<button onclick="localStorage.clear(); location.reload();" style="margin-top:20px;padding:10px 20px;background:white;color:red;border:none;cursor:pointer;font-weight:bold;">SOLUCIONAR: Borrar Datos Locales y Recargar</button>';
+            document.body.appendChild(errDiv);
+        });
+    </script>
+</body>
+</html>
