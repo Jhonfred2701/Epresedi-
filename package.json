@@ -5,6 +5,7 @@
   "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js",
+    "build": "npm install && npm rebuild sqlite3",
     "dev": "node --watch server/server.js"
   },
   "dependencies": {
@@ -15,6 +16,6 @@
     "sqlite3": "^6.0.1"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": "20.x"
   }
 }
