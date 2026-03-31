@@ -95,7 +95,7 @@ const HistorialView = {
                         <i class="fa-solid fa-envelope"></i> Enviar Correo
                     </button>
                     <button onclick="HistorialView.descargarPDF('${f.id}')" class="bg-slate-800 hover:bg-slate-700 text-white px-5 py-2 rounded-lg shadow-sm font-medium flex items-center gap-2 transition">
-                        <i class="fa-solid fa-file-pdf"></i> Descargar PDF Profesinal
+                        <i class="fa-solid fa-file-pdf"></i> Descargar PDF Profesional
                     </button>
                     <button onclick="window.print()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg shadow-sm font-medium flex items-center gap-2 transition" title="Impresión Browser">
                         <i class="fa-solid fa-print"></i>
