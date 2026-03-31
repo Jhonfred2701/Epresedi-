@@ -80,7 +80,7 @@ const VentasView = {
     },
 
     // ─── Shared form wrapper ───────────────────────────────────────────────────
-    _wrapForm(titulo, icon, descripcion, fieldsHtml) {
+    _wrapForm(titulo, icon, descripcion, fieldsHtml, showPaymentFields = true) {
         return `
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div class="bg-gradient-to-r from-brand-700 to-brand-600 px-6 py-4 text-white flex items-center gap-3">
@@ -140,6 +140,7 @@ const VentasView = {
                                 <option value="anulada">Anulada</option>
                             </select>
                         </div>
+                        ${showPaymentFields ? `
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Medio de Pago</label>
                             <select id="v-metodo-pago-global" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
@@ -156,7 +157,7 @@ const VentasView = {
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de Pago</label>
                             <input type="date" id="v-fecha-pago-global" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                        </div>
+                        </div>` : ''}
 
                         ${fieldsHtml}
 
@@ -335,7 +336,7 @@ const VentasView = {
         `;
         document.getElementById('ventas-form-container').innerHTML = this._wrapForm(
             'Comprobante de Pago', 'fa-receipt',
-            'Confirmación de pago recibido del cliente', fields
+            'Confirmación de pago recibido del cliente', fields, false
         );
         this._rowCount = 1;
         this._setToday();
@@ -374,7 +375,7 @@ const VentasView = {
         `;
         document.getElementById('ventas-form-container').innerHTML = this._wrapForm(
             'Pago Electrónico', 'fa-mobile-screen',
-            'Registro de pagos digitales y transferencias', fields
+            'Registro de pagos digitales y transferencias', fields, false
         );
         this._rowCount = 1;
         this._setToday();
