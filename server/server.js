@@ -11,7 +11,7 @@ app.use(cors());
 app.use(express.json());
 
 // Servir archivos estáticos del frontend (para Glitch)
-app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(path.join(__dirname, '../')));
 
 // =======================
 // AUTHENTICATION & USUARIOS
@@ -267,7 +267,7 @@ app.delete('/api/facturas/:id', async (req, res) => {
 
 // Ruta comodín: redirige todo lo demás al index.html (SPA)
 app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/index.html'));
+    res.sendFile(path.join(__dirname, '../index.html'));
 });
 
 // Iniciar servidor (usa PORT de Glitch o 3000 en local)
