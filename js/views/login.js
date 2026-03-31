@@ -36,7 +36,7 @@ const LoginView = {
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                         <i class="fa-solid fa-lock text-gray-400"></i>
                                     </div>
-                                    <input id="password" type="password" required class="focus:ring-brand-500 focus:border-brand-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2.5 border" placeholder="123">
+                                    <input id="password" type="password" required class="focus:ring-brand-500 focus:border-brand-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2.5 border" placeholder="admin123">
                                 </div>
                             </div>
 
@@ -54,7 +54,7 @@ const LoginView = {
                         </form>
                     </div>
                     <p class="text-center text-xs text-gray-500 mt-6">
-                        Credenciales de prueba: admin / 123
+                        Credenciales de prueba: admin / admin123
                     </p>
                 </div>
             </div>
