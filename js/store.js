@@ -166,19 +166,12 @@ const Store = {
 
     // ESTADISTICAS
     async getStats() {
-        const facturas = await this.getFacturas();
-        const clientes = await this.getClientes();
-        const inmuebles = await this.getInmuebles();
-        
-        const totalIngresos = facturas.reduce((sum, f) => sum + parseFloat(f.total || 0), 0);
-        const disponibles = inmuebles.filter(i => i.estado === 'Disponible').length;
-        
-        return {
-            totalClientes: clientes.length,
-            facturasMes: facturas.length,
-            ingresosTotales: totalIngresos,
-            inmueblesDisponibles: disponibles
-        };
+        try {
+            const res = await fetch(`${this.API_URL}/dashboard-stats`);
+            return await res.json();
+        } catch (e) {
+            return { totalProductos: 0, totalVentas: 0, totalClientes: 0, ingresosTotales: 0, lowStock: 0 };
+        }
     }
 };
 

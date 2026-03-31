@@ -69,7 +69,8 @@ const SCHEMA_SQLITE = `
     CREATE TABLE IF NOT EXISTS productos (
         id TEXT PRIMARY KEY,
         codigo TEXT NOT NULL UNIQUE,
-        nombre TEXT NOT NULL
+        nombre TEXT NOT NULL,
+        stock INTEGER DEFAULT 0
     );
     INSERT OR IGNORE INTO productos (id, codigo, nombre) VALUES 
         ('P1', 'ARR-01', 'Canon de Arrendamiento Comercial'),
@@ -136,7 +137,8 @@ const SCHEMA_POSTGRES = `
     CREATE TABLE IF NOT EXISTS productos (
         id TEXT PRIMARY KEY,
         codigo TEXT NOT NULL UNIQUE,
-        nombre TEXT NOT NULL
+        nombre TEXT NOT NULL,
+        stock INTEGER DEFAULT 0
     );
     INSERT INTO productos (id, codigo, nombre) VALUES 
         ('P1', 'ARR-01', 'Canon de Arrendamiento Comercial'),
@@ -193,6 +195,7 @@ const dbWrapper = {
 
         if (IS_POSTGRES) {
             await pgPool.query(SCHEMA_POSTGRES);
+            try { await pgPool.query('ALTER TABLE productos ADD COLUMN stock INTEGER DEFAULT 0'); } catch(e){}
         } else {
             const sqlite3 = require('sqlite3').verbose();
             const { open } = require('sqlite');
@@ -203,6 +206,7 @@ const dbWrapper = {
             sqliteDb = await open({ filename: path.join(dataDir, 'epresedi.db'), driver: sqlite3.Database });
             await sqliteDb.run('PRAGMA foreign_keys = ON');
             await sqliteDb.exec(SCHEMA_SQLITE);
+            try { await sqliteDb.run('ALTER TABLE productos ADD COLUMN stock INTEGER DEFAULT 0'); } catch(e){}
         }
     },
 

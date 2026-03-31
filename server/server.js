@@ -265,6 +265,28 @@ app.delete('/api/facturas/:id', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// =======================
+// DASHBOARD STATS
+// =======================
+app.get('/api/dashboard-stats', async (req, res) => {
+    try {
+        const [prodCount] = await db.query('SELECT COUNT(*) as c FROM productos');
+        const [factCount] = await db.query('SELECT COUNT(*) as c FROM facturas');
+        const [clientCount] = await db.query('SELECT COUNT(*) as c FROM clientes');
+        const [salesTotal] = await db.query('SELECT SUM(total) as s FROM facturas');
+        const [lowStock] = await db.query('SELECT COUNT(*) as c FROM productos WHERE stock >= 0 AND stock < 10');
+
+        // Normalizamos valores porque PostgreSQL devuelve COUNT como String, y SQLite como Number
+        res.json({
+            totalProductos: parseInt(prodCount[0].c || 0),
+            totalVentas: parseInt(factCount[0].c || 0),
+            totalClientes: parseInt(clientCount[0].c || 0),
+            ingresosTotales: parseFloat(salesTotal[0].s || 0),
+            lowStock: parseInt(lowStock[0].c || 0)
+        });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // Ruta comodín: redirige todo lo demás al index.html (SPA)
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../index.html'));
