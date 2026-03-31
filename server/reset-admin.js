@@ -5,7 +5,7 @@ async function resetAdmin() {
     try {
         console.log("Conectando a la base de datos...");
         // Verificar si existe el usuario
-        const [rows] = await db.query('SELECT * FROM usuarios WHERE username = "admin"');
+        const [rows] = await db.query("SELECT * FROM usuarios WHERE username = 'admin'");
         
         const hash = await bcrypt.hash('admin123', 10);
         
@@ -18,7 +18,7 @@ async function resetAdmin() {
             console.log('✅ Usuario Administrador creado exitosamente (Usuario: admin, Clave: admin123)');
         } else {
             console.log("El usuario admin ya existe. Actualizando la contraseña a formato encriptado...");
-            await db.query('UPDATE usuarios SET password = ? WHERE username = "admin"', [hash]);
+            await db.query("UPDATE usuarios SET password = ? WHERE username = 'admin'", [hash]);
             console.log('✅ Contraseña actualizada correctamente (Usuario: admin, Clave: admin123)');
         }
     } catch (e) {

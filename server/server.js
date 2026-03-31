@@ -20,7 +20,7 @@ app.use(express.static(path.join(__dirname, '../public')));
 // Crear Admin por defecto automáticamente si la tabla está vacía
 const createDefaultAdmin = async () => {
     try {
-        const [rows] = await db.query('SELECT * FROM usuarios WHERE username = "admin"');
+        const [rows] = await db.query("SELECT * FROM usuarios WHERE username = 'admin'");
         if (rows.length === 0) {
             const hash = await bcrypt.hash('admin123', 10);
             const fecha = new Date().toISOString().split('T')[0];
