@@ -1,7 +1,7 @@
 const HistorialView = {
-    renderList() {
+    async renderList() {
         const query = document.getElementById('search-historial')?.value.toLowerCase() || '';
-        let facturas = Store.getFacturas();
+        let facturas = await Store.getFacturas();
         if (query) {
             facturas = facturas.filter(f => 
                 f.id.toLowerCase().includes(query) ||
@@ -68,16 +68,16 @@ const HistorialView = {
         }
     },
 
-    delete(id) {
+    async delete(id) {
         if(confirm('¿Está seguro de anular/eliminar esta factura?')) {
-            Store.deleteFactura(id);
+            await Store.deleteFactura(id);
             showToast('Factura eliminada');
             this.renderList();
         }
     },
 
-    renderFactura(id) {
-        const facturas = Store.getFacturas();
+    async renderFactura(id) {
+        const facturas = await Store.getFacturas();
         const f = facturas.find(fac => fac.id === id);
         
         if(!f) {
