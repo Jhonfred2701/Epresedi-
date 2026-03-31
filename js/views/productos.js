@@ -1,6 +1,7 @@
 const ProductosView = {
     categorias: [],
     proveedores: [],
+    productos: [],
 
     async render() {
         const query = document.getElementById('search-productos')?.value.toLowerCase() || '';
@@ -14,6 +15,7 @@ const ProductosView = {
         
         this.categorias = cats;
         this.proveedores = provs;
+        this.productos = prods;
         let productos = prods;
 
         // Buscador en tiempo real por código o nombre
@@ -150,7 +152,7 @@ const ProductosView = {
                                     <label class="block text-xs font-bold text-gray-600 mb-1.5 uppercase">Cantidad Stock</label>
                                     <div class="relative group">
                                         <i class="fa-solid fa-cubes-stacked absolute left-3 top-3 text-gray-400 group-focus-within:text-brand-500 transition"></i>
-                                        <input type="number" id="prod-stock" value="0" min="0" required class="w-full border-2 border-gray-200 rounded-lg pl-10 pr-4 py-2.5 focus:border-brand-500 focus:ring-0 focus:outline-none font-black text-xl text-gray-800 transition">
+                                        <input type="number" id="prod-stock" value="0" min="0" class="w-full border-2 border-gray-200 rounded-lg pl-10 pr-4 py-2.5 focus:border-brand-500 focus:ring-0 focus:outline-none font-black text-xl text-gray-800 transition">
                                     </div>
                                 </div>
                                 <div>
@@ -161,10 +163,10 @@ const ProductosView = {
                                     </div>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-bold text-gray-600 mb-1.5 uppercase">Precio Final (Venta) *</label>
+                                    <label class="block text-xs font-bold text-gray-600 mb-1.5 uppercase">Precio Final (Venta)</label>
                                     <div class="relative group">
                                         <span class="absolute left-3 top-2.5 text-gray-500 font-bold text-lg group-focus-within:text-green-500 transition">$</span>
-                                        <input type="number" id="prod-precio-venta" value="0" min="0" step="0.01" required class="w-full border-2 border-gray-200 rounded-lg pl-8 pr-4 py-2.5 focus:border-green-500 focus:ring-0 focus:outline-none font-black text-xl text-green-700 bg-green-50 transition border-green-200">
+                                        <input type="number" id="prod-precio-venta" value="0" min="0" step="0.01" class="w-full border-2 border-gray-200 rounded-lg pl-8 pr-4 py-2.5 focus:border-green-500 focus:ring-0 focus:outline-none font-black text-xl text-green-700 bg-green-50 transition border-green-200">
                                     </div>
                                 </div>
                             </div>
@@ -215,20 +217,33 @@ const ProductosView = {
         }
     },
 
-    toggleModal() {
+    toggleModal(isEdit = false) {
         const modal = document.getElementById('modal-producto');
         if (modal.classList.contains('hidden')) {
             modal.classList.remove('hidden');
             modal.classList.add('flex'); // Se usa display flex para centrar
             document.getElementById('form-producto').reset();
             document.getElementById('prod-id').value = '';
-            document.getElementById('modal-producto-title').textContent = 'Crear Nuevo Producto';
             
-            // Habilitar el código para nuevos ingresos
-            const inputCodigo = document.getElementById('prod-codigo');
-            inputCodigo.disabled = false;
-            inputCodigo.classList.remove('bg-gray-200', 'cursor-not-allowed', 'opacity-70');
-            document.getElementById('hint-codigo').innerText = "Importante: El código es único e irrepetible.";
+            if (!isEdit) {
+                document.getElementById('modal-producto-title').textContent = 'Crear Nuevo Producto';
+                
+                // Habilitar el código para nuevos ingresos
+                const inputCodigo = document.getElementById('prod-codigo');
+                inputCodigo.disabled = false;
+                inputCodigo.classList.remove('bg-gray-200', 'cursor-not-allowed', 'opacity-70');
+                document.getElementById('hint-codigo').innerText = "Importante: El código es auto-generado, pero puede modificarlo si lo desea.";
+                
+                // Generar código automático
+                const count = (this.productos ? this.productos.length : 0) + 1;
+                let num = count;
+                let newCode = `PROD-${num.toString().padStart(4, '0')}`;
+                while(this.productos && this.productos.some(p => p.codigo === newCode)) {
+                    num++;
+                    newCode = `PROD-${num.toString().padStart(4, '0')}`;
+                }
+                inputCodigo.value = newCode;
+            }
         } else {
             modal.classList.add('hidden');
             modal.classList.remove('flex');
@@ -274,7 +289,7 @@ const ProductosView = {
         const item = productos.find(c => c.id === id);
         if(!item) return;
         
-        this.toggleModal(); // Abre en modo "nuevo" limpiando form
+        this.toggleModal(true); // Abre en modo edición sin generar código automático
         
         // Poblar datos
         document.getElementById('modal-producto-title').innerHTML = `Modificando <b>${item.codigo}</b>`;

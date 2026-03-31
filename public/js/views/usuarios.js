@@ -199,7 +199,7 @@ const UsuariosView = {
             rol: document.getElementById('usr-rol').value,
             estado: document.getElementById('usr-estado').value,
             password: pwd,
-            fecha_registro: new Date().toISOString().split('T')[0]
+            fecha_registro: new Intl.DateTimeFormat('fr-CA', { timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
         };
 
         try {

@@ -1,7 +1,10 @@
 const ProductosView = {
+    productos: [],
+
     async render() {
         const query = document.getElementById('search-productos')?.value.toLowerCase() || '';
         let productos = await Store.getProductos();
+        this.productos = productos;
         if (query) {
             productos = productos.filter(p => 
                 p.nombre.toLowerCase().includes(query) ||
@@ -110,6 +113,17 @@ const ProductosView = {
             document.getElementById('prod-id').value = '';
             if (!isEdit) {
                 document.getElementById('modal-producto-title').textContent = 'Registrar Producto/Servicio';
+                
+                // Generar código automático
+                const count = (this.productos ? this.productos.length : 0) + 1;
+                let num = count;
+                let newCode = `PROD-${num.toString().padStart(4, '0')}`;
+                while(this.productos && this.productos.some(p => p.codigo === newCode)) {
+                    num++;
+                    newCode = `PROD-${num.toString().padStart(4, '0')}`;
+                }
+                const inputCodigo = document.getElementById('prod-codigo');
+                if (inputCodigo) inputCodigo.value = newCode;
             }
         } else {
             modal.classList.add('hidden');

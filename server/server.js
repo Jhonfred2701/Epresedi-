@@ -23,7 +23,7 @@ const createDefaultAdmin = async () => {
         const [rows] = await db.query("SELECT * FROM usuarios WHERE username = 'admin'");
         if (rows.length === 0) {
             const hash = await bcrypt.hash('admin123', 10);
-            const fecha = new Date().toISOString().split('T')[0];
+            const fecha = new Intl.DateTimeFormat('fr-CA', { timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
             await db.query(`INSERT INTO usuarios (id, nombre, correo, username, password, rol, estado, fecha_registro) 
                             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, 
                             ['U-ADMIN', 'Administrador Principal', 'admin@epresedi.com', 'admin', hash, 'Administrador', 'Activo', fecha]);
@@ -177,7 +177,7 @@ app.post('/api/productos', async (req, res) => {
     try {
         const p = req.body;
         const id = 'P' + Date.now();
-        const fecha = new Date().toISOString().split('T')[0];
+        const fecha = new Intl.DateTimeFormat('fr-CA', { timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
         await db.query(`INSERT INTO productos (id, codigo, nombre, stock, precio_compra, precio_venta, id_categoria, id_proveedor, fecha_creacion) 
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
                         [id, p.codigo, p.nombre, p.stock || 0, p.precio_compra || 0, p.precio_venta || 0, p.id_categoria || 'CAT-GEN', p.id_proveedor || 'PROV-GEN', fecha]);
@@ -238,62 +238,10 @@ app.delete('/api/inmuebles/:id', async (req, res) => {
 });
 
 // =======================
-// FACTURAS
+// FACTURAS (MVC Routes)
 // =======================
-app.get('/api/facturas', async (req, res) => {
-    try {
-        // Necesitamos devolver la factura con sus ítems
-        const [facturas] = await db.query('SELECT * FROM facturas ORDER BY id DESC');
-        const [items] = await db.query('SELECT * FROM factura_items');
-        
-        // Empaquetar los items dentro de cada factura para mantener el formato del frontend actual
-        const result = facturas.map(f => {
-            f.items = items.filter(i => i.factura_id === f.id);
-            return f;
-        });
-        
-        res.json(result);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.post('/api/facturas', async (req, res) => {
-    const connection = await db.getConnection();
-    try {
-        await connection.beginTransaction();
-        
-        const f = req.body; // factura
-        const [rows] = await connection.query('SELECT COUNT(*) as count FROM facturas');
-        const numero = parseInt(rows[0].count) + 9227; 
-        const facturaId = 'FV-' + numero;
-        
-        await connection.query(`INSERT INTO facturas (id, fecha, clienteId, cliente, nit, contacto, total, estado) 
-                                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-                                [facturaId, f.fecha, f.clienteId || null, f.cliente, f.nit, f.contacto, f.total, f.estado || 'emitida']);
-        
-        for (const item of f.items) {
-            const itemId = 'FI-' + Date.now() + Math.floor(Math.random() * 1000);
-            await connection.query(`INSERT INTO factura_items (id, factura_id, codigo, descripcion, cantidad, valorUnitario, total) 
-                                    VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                                    [itemId, facturaId, item.codigo, item.descripcion, item.cantidad, item.valorUnitario, item.total]);
-        }
-        
-        await connection.commit();
-        res.json({ id: facturaId, ...f });
-    } catch (err) { 
-        await connection.rollback();
-        res.status(500).json({ error: err.message }); 
-    } finally {
-        connection.release();
-    }
-});
-
-app.delete('/api/facturas/:id', async (req, res) => {
-    try {
-        // CASCADE delete eliminará los items automáticamente si está en el esquema SQL (ON DELETE CASCADE)
-        await db.query('DELETE FROM facturas WHERE id = ?', [req.params.id]);
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
+const facturasRoutes = require('./routes/facturasRoutes');
+app.use('/api/facturas', facturasRoutes);
 
 // =======================
 // DASHBOARD STATS

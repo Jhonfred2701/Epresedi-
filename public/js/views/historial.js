@@ -1,7 +1,7 @@
 const HistorialView = {
-    renderList() {
+    async renderList() {
         const query = document.getElementById('search-historial')?.value.toLowerCase() || '';
-        let facturas = Store.getFacturas();
+        let facturas = await Store.getFacturas();
         if (query) {
             facturas = facturas.filter(f => 
                 f.id.toLowerCase().includes(query) ||
@@ -68,16 +68,16 @@ const HistorialView = {
         }
     },
 
-    delete(id) {
+    async delete(id) {
         if(confirm('¿Está seguro de anular/eliminar esta factura?')) {
-            Store.deleteFactura(id);
+            await Store.deleteFactura(id);
             showToast('Factura eliminada');
             this.renderList();
         }
     },
 
-    renderFactura(id) {
-        const facturas = Store.getFacturas();
+    async renderFactura(id) {
+        const facturas = await Store.getFacturas();
         const f = facturas.find(fac => fac.id === id);
         
         if(!f) {
@@ -90,9 +90,17 @@ const HistorialView = {
                 <button onclick="window.history.back()" class="text-brand-600 hover:text-brand-800 font-medium flex items-center gap-2">
                     <i class="fa-solid fa-arrow-left"></i> Volver
                 </button>
-                <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-700 text-white px-5 py-2 rounded-lg shadow-sm font-medium flex items-center gap-2 transition">
-                    <i class="fa-solid fa-file-pdf"></i> Descargar PDF / Imprimir
-                </button>
+                <div class="flex gap-2">
+                    <button onclick="HistorialView.enviarCorreo('${f.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg shadow-sm font-medium flex items-center gap-2 transition">
+                        <i class="fa-solid fa-envelope"></i> Enviar Correo
+                    </button>
+                    <button onclick="HistorialView.descargarPDF('${f.id}')" class="bg-slate-800 hover:bg-slate-700 text-white px-5 py-2 rounded-lg shadow-sm font-medium flex items-center gap-2 transition">
+                        <i class="fa-solid fa-file-pdf"></i> Descargar PDF Profesinal
+                    </button>
+                    <button onclick="window.print()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg shadow-sm font-medium flex items-center gap-2 transition" title="Impresión Browser">
+                        <i class="fa-solid fa-print"></i>
+                    </button>
+                </div>
             </div>
             
             <div class="print-view bg-white rounded-lg shadow-lg border border-gray-200 p-8 w-full max-w-4xl mx-auto print:shadow-none print:border-none">
@@ -186,5 +194,36 @@ const HistorialView = {
         `;
         document.getElementById('view-historial').innerHTML = html;
         document.querySelector('aside').classList.add('print:hidden');
+    },
+
+    descargarPDF(id) {
+        showToast('Generando PDF Profesional, por favor espere...');
+        setTimeout(() => {
+            const url = window.location.origin + '/api/facturas/' + id + '/pdf';
+            window.open(url, '_blank');
+        }, 500);
+    },
+
+    async enviarCorreo(id) {
+        const email = prompt('¿A qué correo deseas enviar esta factura electrónica?', '');
+        if (!email) return;
+
+        showToast('Enviando correo, un momento por favor...');
+        
+        try {
+            const req = await fetch('/api/facturas/' + id + '/email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ correo: email.trim() })
+            });
+            const res = await req.json();
+            if(res.success) {
+                showToast('Correo enviado exitosamente a ' + email);
+            } else {
+                showToast('Error del servidor: ' + (res.error || 'Inválido'), true);
+            }
+        } catch(e) {
+            showToast('No se pudo establecer conexión para envío', true);
+        }
     }
 };

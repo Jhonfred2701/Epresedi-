@@ -57,7 +57,7 @@ const FacturacionView = {
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de Elaboración</label>
-                            <input type="date" id="fecha" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-500 focus:outline-none" value="${new Date().toISOString().split('T')[0]}">
+                            <input type="date" id="fecha" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand-500 focus:outline-none" value="${new Intl.DateTimeFormat('fr-CA', { timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())}">
                         </div>
                     </div>
 
@@ -340,7 +340,7 @@ const FacturacionView = {
             tipo_doc: document.getElementById('fc-tipo-doc').value,
             nit: document.getElementById('fc-nit').value.trim(),
             correo: document.getElementById('fc-correo').value.trim(),
-            fecha_registro: new Date().toISOString().split('T')[0]
+            fecha_registro: new Intl.DateTimeFormat('fr-CA', { timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
         };
 
         const nuevo = await Store.addCliente(data);

@@ -74,7 +74,7 @@ const App = {
 
         if(hash.startsWith('#factura/')) {
             document.getElementById('view-historial').classList.add('active');
-            if (window.HistorialView) {
+            if (typeof HistorialView !== 'undefined') {
                 HistorialView.renderFactura(hash.split('/')[1]);
             }
             return;

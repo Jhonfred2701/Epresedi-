@@ -185,7 +185,7 @@ const ClientesView = {
             document.getElementById('cliente-id').value = '';
             
             // Set default date to today for new clients
-            const todayDate = new Date().toISOString().split('T')[0];
+            const todayDate = new Intl.DateTimeFormat('fr-CA', { timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
             document.getElementById('cli-fecha-registro').value = todayDate;
             
             if (isEdit !== true) {
@@ -243,7 +243,7 @@ const ClientesView = {
         document.getElementById('cli-tipo-doc').value = item.tipo_doc || 'NIT';
         document.getElementById('cli-nit').value = item.nit || '';
         
-        const todayDate = new Date().toISOString().split('T')[0];
+        const todayDate = new Intl.DateTimeFormat('fr-CA', { timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
         document.getElementById('cli-fecha-registro').value = item.fecha_registro || todayDate;
         
         document.getElementById('cli-telefono').value = item.telefono || '';
