@@ -119,6 +119,20 @@ const Store = {
         await fetch(`${this.API_URL}/inmuebles/${id}`, { method: 'DELETE' });
     },
 
+    // CATEGORIAS & PROVEEDORES
+    async getCategorias() { 
+        try {
+            const res = await fetch(`${this.API_URL}/categorias`);
+            return await res.json();
+        } catch (e) { return []; }
+    },
+    async getProveedores() { 
+        try {
+            const res = await fetch(`${this.API_URL}/proveedores`);
+            return await res.json();
+        } catch (e) { return []; }
+    },
+
     // PRODUCTOS
     async getProductos() { 
         try {

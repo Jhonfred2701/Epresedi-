@@ -138,28 +138,58 @@ app.delete('/api/clientes/:id', async (req, res) => {
 });
 
 // =======================
+// CATEGORIAS & PROVEEDORES
+// =======================
+app.get('/api/categorias', async (req, res) => {
+    try {
+        const [rows] = await db.query('SELECT * FROM categorias ORDER BY nombre ASC');
+        res.json(rows);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get('/api/proveedores', async (req, res) => {
+    try {
+        const [rows] = await db.query('SELECT * FROM proveedores ORDER BY nombre ASC');
+        res.json(rows);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// =======================
 // PRODUCTOS (CRUD)
 // =======================
 app.get('/api/productos', async (req, res) => {
     try {
-        const [rows] = await db.query('SELECT * FROM productos ORDER BY codigo ASC');
+        const sql = `
+            SELECT p.*, 
+                   c.nombre as categoria_nombre, 
+                   pr.nombre as proveedor_nombre 
+            FROM productos p
+            LEFT JOIN categorias c ON p.id_categoria = c.id
+            LEFT JOIN proveedores pr ON p.id_proveedor = pr.id
+            ORDER BY p.codigo ASC
+        `;
+        const [rows] = await db.query(sql);
         res.json(rows);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.post('/api/productos', async (req, res) => {
     try {
-        const { codigo, nombre } = req.body;
+        const p = req.body;
         const id = 'P' + Date.now();
-        await db.query('INSERT INTO productos (id, codigo, nombre) VALUES (?, ?, ?)', [id, codigo, nombre]);
-        res.json({ id, codigo, nombre });
+        const fecha = new Date().toISOString().split('T')[0];
+        await db.query(`INSERT INTO productos (id, codigo, nombre, stock, precio_compra, precio_venta, id_categoria, id_proveedor, fecha_creacion) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
+                        [id, p.codigo, p.nombre, p.stock || 0, p.precio_compra || 0, p.precio_venta || 0, p.id_categoria || 'CAT-GEN', p.id_proveedor || 'PROV-GEN', fecha]);
+        res.json({ id, ...p, fecha_creacion: fecha });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.put('/api/productos/:id', async (req, res) => {
     try {
-        const { codigo, nombre } = req.body;
-        await db.query('UPDATE productos SET codigo=?, nombre=? WHERE id=?', [codigo, nombre, req.params.id]);
+        const p = req.body;
+        await db.query(`UPDATE productos SET codigo=?, nombre=?, stock=?, precio_compra=?, precio_venta=?, id_categoria=?, id_proveedor=? WHERE id=?`, 
+                       [p.codigo, p.nombre, p.stock || 0, p.precio_compra || 0, p.precio_venta || 0, p.id_categoria || 'CAT-GEN', p.id_proveedor || 'PROV-GEN', req.params.id]);
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });

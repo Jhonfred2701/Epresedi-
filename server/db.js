@@ -66,11 +66,31 @@ const SCHEMA_SQLITE = `
         departamento TEXT,
         codigo_postal TEXT
     );
+    CREATE TABLE IF NOT EXISTS categorias (
+        id TEXT PRIMARY KEY,
+        nombre TEXT NOT NULL,
+        descripcion TEXT
+    );
+    INSERT OR IGNORE INTO categorias (id, nombre, descripcion) VALUES ('CAT-GEN', 'General', 'Categoría por defecto');
+    CREATE TABLE IF NOT EXISTS proveedores (
+        id TEXT PRIMARY KEY,
+        nombre TEXT NOT NULL,
+        contacto TEXT,
+        telefono TEXT
+    );
+    INSERT OR IGNORE INTO proveedores (id, nombre, contacto, telefono) VALUES ('PROV-GEN', 'Proveedor General', 'Administrador', '0000000000');
     CREATE TABLE IF NOT EXISTS productos (
         id TEXT PRIMARY KEY,
         codigo TEXT NOT NULL UNIQUE,
         nombre TEXT NOT NULL,
-        stock INTEGER DEFAULT 0
+        stock INTEGER DEFAULT 0,
+        precio_compra NUMERIC DEFAULT 0,
+        precio_venta NUMERIC DEFAULT 0,
+        id_categoria TEXT DEFAULT 'CAT-GEN',
+        id_proveedor TEXT DEFAULT 'PROV-GEN',
+        fecha_creacion TEXT,
+        FOREIGN KEY (id_categoria) REFERENCES categorias(id) ON DELETE SET NULL,
+        FOREIGN KEY (id_proveedor) REFERENCES proveedores(id) ON DELETE SET NULL
     );
     INSERT OR IGNORE INTO productos (id, codigo, nombre) VALUES 
         ('P1', 'ARR-01', 'Canon de Arrendamiento Comercial'),
@@ -134,11 +154,29 @@ const SCHEMA_POSTGRES = `
         departamento TEXT,
         codigo_postal TEXT
     );
+    CREATE TABLE IF NOT EXISTS categorias (
+        id TEXT PRIMARY KEY,
+        nombre TEXT NOT NULL,
+        descripcion TEXT
+    );
+    INSERT INTO categorias (id, nombre, descripcion) VALUES ('CAT-GEN', 'General', 'Categoría por defecto') ON CONFLICT (id) DO NOTHING;
+    CREATE TABLE IF NOT EXISTS proveedores (
+        id TEXT PRIMARY KEY,
+        nombre TEXT NOT NULL,
+        contacto TEXT,
+        telefono TEXT
+    );
+    INSERT INTO proveedores (id, nombre, contacto, telefono) VALUES ('PROV-GEN', 'Proveedor General', 'Administrador', '0000000000') ON CONFLICT (id) DO NOTHING;
     CREATE TABLE IF NOT EXISTS productos (
         id TEXT PRIMARY KEY,
         codigo TEXT NOT NULL UNIQUE,
         nombre TEXT NOT NULL,
-        stock INTEGER DEFAULT 0
+        stock INTEGER DEFAULT 0,
+        precio_compra NUMERIC DEFAULT 0,
+        precio_venta NUMERIC DEFAULT 0,
+        id_categoria TEXT REFERENCES categorias(id) ON DELETE SET NULL DEFAULT 'CAT-GEN',
+        id_proveedor TEXT REFERENCES proveedores(id) ON DELETE SET NULL DEFAULT 'PROV-GEN',
+        fecha_creacion TEXT
     );
     INSERT INTO productos (id, codigo, nombre) VALUES 
         ('P1', 'ARR-01', 'Canon de Arrendamiento Comercial'),
@@ -196,6 +234,11 @@ const dbWrapper = {
         if (IS_POSTGRES) {
             await pgPool.query(SCHEMA_POSTGRES);
             try { await pgPool.query('ALTER TABLE productos ADD COLUMN stock INTEGER DEFAULT 0'); } catch(e){}
+            try { await pgPool.query('ALTER TABLE productos ADD COLUMN precio_compra NUMERIC DEFAULT 0'); } catch(e){}
+            try { await pgPool.query('ALTER TABLE productos ADD COLUMN precio_venta NUMERIC DEFAULT 0'); } catch(e){}
+            try { await pgPool.query(`ALTER TABLE productos ADD COLUMN id_categoria TEXT DEFAULT 'CAT-GEN'`); } catch(e){}
+            try { await pgPool.query(`ALTER TABLE productos ADD COLUMN id_proveedor TEXT DEFAULT 'PROV-GEN'`); } catch(e){}
+            try { await pgPool.query('ALTER TABLE productos ADD COLUMN fecha_creacion TEXT'); } catch(e){}
         } else {
             const sqlite3 = require('sqlite3').verbose();
             const { open } = require('sqlite');
@@ -207,6 +250,11 @@ const dbWrapper = {
             await sqliteDb.run('PRAGMA foreign_keys = ON');
             await sqliteDb.exec(SCHEMA_SQLITE);
             try { await sqliteDb.run('ALTER TABLE productos ADD COLUMN stock INTEGER DEFAULT 0'); } catch(e){}
+            try { await sqliteDb.run('ALTER TABLE productos ADD COLUMN precio_compra NUMERIC DEFAULT 0'); } catch(e){}
+            try { await sqliteDb.run('ALTER TABLE productos ADD COLUMN precio_venta NUMERIC DEFAULT 0'); } catch(e){}
+            try { await sqliteDb.run(`ALTER TABLE productos ADD COLUMN id_categoria TEXT DEFAULT 'CAT-GEN'`); } catch(e){}
+            try { await sqliteDb.run(`ALTER TABLE productos ADD COLUMN id_proveedor TEXT DEFAULT 'PROV-GEN'`); } catch(e){}
+            try { await sqliteDb.run('ALTER TABLE productos ADD COLUMN fecha_creacion TEXT'); } catch(e){}
         }
     },
 
