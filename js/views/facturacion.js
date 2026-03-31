@@ -541,7 +541,7 @@ const FacturacionView = {
             observaciones: document.querySelector('textarea').value.trim()
         });
 
-        window.location.hash = \`#factura/\${nuevaFactura.id}\`;
+        window.location.hash = `#factura/${nuevaFactura.id}`;
         showToast('¡Factura o Comprobante generado exitosamente!');
     }
 };
