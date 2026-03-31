@@ -198,23 +198,36 @@ const HistorialView = {
 
     descargarPDF(id) {
         showToast('Generando PDF Profesional, por favor espere...');
-        setTimeout(() => {
-            const url = window.location.origin + '/api/facturas/' + id + '/pdf';
-            window.open(url, '_blank');
-        }, 500);
+        const element = document.querySelector('.print-view');
+        html2pdf().set({
+            margin:       10,
+            filename:     `Factura_EPRESEDI_${id}.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true },
+            jsPDF:        { unit: 'mm', format: 'letter', orientation: 'portrait' }
+        }).from(element).save();
     },
 
     async enviarCorreo(id) {
         const email = prompt('¿A qué correo deseas enviar esta factura electrónica?', '');
         if (!email) return;
 
-        showToast('Enviando correo, un momento por favor...');
+        showToast('Procesando PDF y enviando correo, un momento por favor...');
         
         try {
+            const element = document.querySelector('.print-view');
+            const pdfBase64 = await html2pdf().set({
+                margin: 10,
+                filename: `Factura_EPRESEDI_${id}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'letter', orientation: 'portrait' }
+            }).from(element).outputPdf('datauristring');
+
             const req = await fetch('/api/facturas/' + id + '/email', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ correo: email.trim() })
+                body: JSON.stringify({ correo: email.trim(), fileData: pdfBase64 })
             });
             const res = await req.json();
             if(res.success) {
@@ -223,6 +236,7 @@ const HistorialView = {
                 showToast('Error del servidor: ' + (res.error || 'Inválido'), true);
             }
         } catch(e) {
+            console.error(e);
             showToast('No se pudo establecer conexión para envío', true);
         }
     }

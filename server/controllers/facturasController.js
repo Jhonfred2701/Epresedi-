@@ -1,7 +1,3 @@
-const path = require('path');
-const ejs = require('ejs');
-const puppeteer = require('puppeteer');
-const QRCode = require('qrcode');
 const nodemailer = require('nodemailer');
 const FacturaModel = require('../models/facturasModel');
 
@@ -43,70 +39,33 @@ class FacturasController {
         }
     }
 
-    // Helper interno para generar el Buffer del PDF
-    static async _generatePDFBuffer(id) {
-        const factura = await FacturaModel.getById(id);
-        if (!factura) throw new Error("Factura no encontrada");
-
-        // 1. Generar QR base64
-        const qrData = `FV: ${factura.id} | Cliente: ${factura.cliente} | Total: $${factura.total}`;
-        const qrImage = await QRCode.toDataURL(qrData);
-
-        // 2. Renderizar HTML usando EJS
-        const templatePath = path.join(__dirname, '../views/facturaTemplate.ejs');
-        const html = await ejs.renderFile(templatePath, {
-            factura,
-            qrImage,
-            logoUrl: 'https://via.placeholder.com/200x60/003366/FFFFFF?text=EPRESEDI+S.A.S.' // placeholder profesional
-        });
-
-        // 3. Generar PDF con Puppeteer
-        const browser = await puppeteer.launch({
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
-        });
-        const page = await browser.newPage();
-        await page.setContent(html, { waitUntil: 'networkidle0' });
-        
-        const pdfBuffer = await page.pdf({
-            format: 'Letter',
-            printBackground: true,
-            margin: { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' }
-        });
-
-        await browser.close();
-        return { pdfBuffer, factura };
-    }
-
     static async downloadPDF(req, res) {
-        try {
-            const { pdfBuffer, factura } = await FacturasController._generatePDFBuffer(req.params.id);
-            
-            res.setHeader('Content-Type', 'application/pdf');
-            res.setHeader('Content-Disposition', `attachment; filename=Factura_${factura.id}.pdf`);
-            res.send(pdfBuffer);
-        } catch (err) {
-            console.error('Error PDF:', err);
-            res.status(500).json({ error: err.message });
-        }
+        // Redirigir al inicio porque PDF ahora se maneja 100% en Frontend con html2pdf
+        res.redirect('/#historial');
     }
 
     static async sendEmail(req, res) {
         try {
-            const { pdfBuffer, factura } = await FacturasController._generatePDFBuffer(req.params.id);
+            const id = req.params.id;
+            const factura = await FacturaModel.getById(id);
+            if (!factura) return res.status(404).json({ error: "Factura no encontrada" });
             
-            // Buscar email del destinatario, si la factura tiene info (o lo pedimos)
             const emailDestino = req.body.correo || 'cliente@ejemplo.com'; 
+            const base64Data = req.body.fileData; // Viene del frontend generador PDF
+
+            if(!base64Data) {
+                return res.status(400).json({ error: "No se adjuntó archivo PDF base64" });
+            }
 
             const mailOptions = {
                 from: '"EPRESEDI S.A.S. - Facturación" <noreply@epresedi.com>',
                 to: emailDestino,
                 subject: `Factura Electrónica ${factura.id} - EPRESEDI S.A.S.`,
-                text: `Estimado(a) ${factura.cliente},\n\nAdjunto enviamos la factura electrónica ${factura.id} correspondiente a sus servicios.\n\nTotal a pagar: $${factura.total}\n\nGracias por su confianza.`,
+                text: `Estimado(a) ${factura.cliente},\n\nAdjunto enviamos la factura electrónica ${factura.id} correspondiente a sus servicios.\n\nTotal a pagar: $${factura.total}\n\nGracias por su confianza y preferir trabajar con nosotros.`,
                 attachments: [
                     {
                         filename: `Factura_${factura.id}.pdf`,
-                        content: pdfBuffer,
-                        contentType: 'application/pdf'
+                        path: base64Data // Nodemailer permite dataURIs directamente
                     }
                 ]
             };
