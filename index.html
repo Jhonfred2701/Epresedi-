@@ -59,8 +59,8 @@
             <a href="#dashboard" class="nav-btn px-3 py-2.5 rounded-r-full text-white font-medium flex items-center gap-3 transition hover:bg-white/10 text-[13px]">
                 <i class="fa-solid fa-house w-5 text-center"></i> Inicio
             </a>
-            <a href="#facturar" class="nav-btn px-3 py-2.5 text-blue-100 hover:text-white hover:bg-white/10 rounded-r-full font-medium flex items-center gap-3 transition text-[13px]">
-                <i class="fa-solid fa-dollar-sign w-5 text-center"></i> Ventas
+            <a href="#ventas" class="nav-btn px-3 py-2.5 text-blue-100 hover:text-white hover:bg-white/10 rounded-r-full font-medium flex items-center gap-3 transition text-[13px]">
+                <i class="fa-solid fa-file-invoice-dollar w-5 text-center"></i> Ventas
             </a>
             <a href="#productos" class="nav-btn px-3 py-2.5 text-blue-100 hover:text-white hover:bg-white/10 rounded-r-full font-medium flex items-center gap-3 transition text-[13px]">
                 <i class="fa-solid fa-box w-5 text-center"></i> Catálogo
@@ -100,7 +100,7 @@
                     <i class="fa-solid fa-search absolute left-3 top-1 text-blue-600 font-bold" style="font-size: 11px; margin-top: 5px;"></i>
                     <input type="text" placeholder="Buscar en Epresedi" class="w-full pl-8 pr-3 py-1 bg-[#f4f6f9] border border-transparent rounded-full text-xs text-blue-600 placeholder-blue-600 font-medium focus:bg-white focus:border-blue-400 focus:outline-none transition">
                 </div>
-                <button onclick="window.location.hash='#facturar'" class="bg-[#80c342] hover:bg-[#72b03a] text-white px-4 py-1.5 rounded-md font-bold shadow-sm transition flex items-center gap-1.5 text-sm">
+                <button onclick="window.location.hash='#ventas'" class="bg-[#80c342] hover:bg-[#72b03a] text-white px-4 py-1.5 rounded-md font-bold shadow-sm transition flex items-center gap-1.5 text-sm">
                     <i class="fa-solid fa-plus text-xs"></i> Crear
                 </button>
                 <button onclick="alert('Para soporte del sistema, por favor contacte a soporte@epresedi.com')" class="font-medium text-blue-600 hover:text-blue-800 transition text-xs flex items-center gap-1 cursor-pointer">
@@ -127,6 +127,7 @@
             <section id="view-clientes" class="view-section w-full"></section>
             <section id="view-inmuebles" class="view-section w-full"></section>
             <section id="view-facturar" class="view-section w-full"></section>
+            <section id="view-ventas" class="view-section w-full"></section>
             <section id="view-historial" class="view-section w-full"></section>
             <section id="view-usuarios" class="view-section w-full"></section>
             <section id="view-ajustes" class="view-section w-full"></section>
@@ -146,6 +147,7 @@
     <script src="js/views/clientes.js?v=7"></script>
     <script src="js/views/inmuebles.js?v=7"></script>
     <script src="js/views/facturacion.js?v=10"></script>
+    <script src="js/views/ventas.js?v=1"></script>
     <script src="js/views/historial.js?v=10"></script>
     <script src="js/views/usuarios.js?v=8"></script>
     <script src="js/views/ajustes.js?v=8"></script>

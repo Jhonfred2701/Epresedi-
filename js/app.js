@@ -102,7 +102,12 @@ const App = {
                 break;
             case '#facturar':
                 document.getElementById('view-facturar').classList.add('active');
-                if(typeof FacturacionView !== 'undefined') FacturacionView.render();
+                // Redirect to new unified Ventas module
+                window.location.hash = '#ventas';
+                break;
+            case '#ventas':
+                document.getElementById('view-ventas').classList.add('active');
+                if(typeof VentasView !== 'undefined') VentasView.render();
                 break;
             case '#historial':
                 document.getElementById('view-historial').classList.add('active');

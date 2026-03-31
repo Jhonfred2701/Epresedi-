@@ -85,113 +85,175 @@ const HistorialView = {
             return;
         }
 
+        const clientes = await Store.getClientes();
+        const clienteRecord = clientes.find(c => c.nit === f.nit || c.nombre === f.cliente) || {};
+        
+        let telefonoFactura = clienteRecord.telefono || 'N/D';
+        let correoFactura = clienteRecord.correo || '';
+        let direccionFactura = clienteRecord.direccion || '';
+
+        // Intento de fallback a los records históricos antiguos (f.contacto solía tener dirección + correo)
+        if (!clienteRecord.id && f.contacto) {
+            const parts = f.contacto.split(' ');
+            correoFactura = parts.find(s => s.includes('@')) || '';
+            direccionFactura = parts.filter(s => !s.includes('@')).join(' ') || '';
+        }
+
+        const currentItemsCount = f.items ? f.items.length : 1;
+        const totalVentas = formatMoney(f.total);
+        const subtotalCalc = f.total / 1.19;
+        const ivaCalc = f.total - subtotalCalc;
+
+        // Determine document label based on tipo_documento
+        const tipoDoc = f.tipo_documento || 'Factura de venta';
+        const isComprobante = tipoDoc.toLowerCase().includes('comprobante') || tipoDoc.toLowerCase().includes('pago electrónico') || tipoDoc.toLowerCase().includes('electrónico');
+        const docLabel = isComprobante ? 'Comprobante de Ingreso' : 'Factura Electrónica de Venta';
+        const idFacturaDisplay = 'FV2-' + f.id.toString().slice(-4); 
+
         const html = `
-            <div class="mb-4 flex pl-2 print:hidden justify-between items-center w-full max-w-4xl mx-auto">
-                <button onclick="window.history.back()" class="text-brand-600 hover:text-brand-800 font-medium flex items-center gap-2">
-                    <i class="fa-solid fa-arrow-left"></i> Volver
-                </button>
-                <div class="flex gap-2">
-                    <button onclick="HistorialView.enviarCorreo('${f.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg shadow-sm font-medium flex items-center gap-2 transition">
-                        <i class="fa-solid fa-envelope"></i> Enviar Correo
+            <div class="mb-4 flex pl-2 print:hidden justify-between items-center w-full max-w-[900px] mx-auto bg-white p-3 rounded shadow-sm border border-gray-100">
+                <div class="flex items-center gap-4">
+                    <button onclick="window.history.back()" class="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 text-xl">
+                        <i class="fa-solid fa-bars"></i>
                     </button>
-                    <button onclick="HistorialView.descargarPDF('${f.id}')" class="bg-slate-800 hover:bg-slate-700 text-white px-5 py-2 rounded-lg shadow-sm font-medium flex items-center gap-2 transition">
-                        <i class="fa-solid fa-file-pdf"></i> Descargar PDF Profesional
+                    <h2 class="text-lg font-medium text-gray-800 hidden md:block">${tipoDoc} - ${idFacturaDisplay}</h2>
+                </div>
+                
+                <div class="flex gap-2 text-sm">
+                    <button onclick="HistorialView.descargarPDF('${f.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded shadow-sm font-medium flex items-center gap-2 transition">
+                        PDF
                     </button>
-                    <button onclick="window.print()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg shadow-sm font-medium flex items-center gap-2 transition" title="Impresión Browser">
+                    <button onclick="HistorialView.enviarCorreo('${f.id}')" class="bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-4 py-1.5 rounded shadow-sm font-medium flex items-center gap-2 transition">
+                        <i class="fa-regular fa-envelope"></i> Enviar por Email
+                    </button>
+                    <button onclick="window.location.hash='#facturar'" class="bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 px-4 py-1.5 rounded shadow-sm font-medium transition hidden md:block">
+                        Nueva Factura
+                    </button>
+                    <button onclick="window.print()" class="bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 w-10 py-1.5 rounded shadow-sm font-medium transition" title="Impresión Browser">
                         <i class="fa-solid fa-print"></i>
                     </button>
                 </div>
             </div>
+
+            <!-- Dashboard de estadísticas rápido -->
+            <div class="flex justify-center flex-wrap gap-8 text-sm font-medium text-gray-600 mb-6 print:hidden w-full max-w-[900px] mx-auto bg-gray-50 p-2 rounded-lg">
+                <span>Total de productos: <span class="text-gray-900">${currentItemsCount}</span></span>
+                <span>Total de ventas: <span class="text-gray-900">${totalVentas}</span></span>
+                <span>Clientes: <span class="text-gray-900">1</span></span>
+            </div>
             
-            <div class="print-view bg-white rounded-lg shadow-lg border border-gray-200 p-8 w-full max-w-4xl mx-auto print:shadow-none print:border-none">
+            <div class="print-view bg-white shadow-md border border-gray-200 w-full max-w-[900px] mx-auto print:shadow-none print:border-none p-10 print:p-0 relative font-sans text-gray-800">
                 
-                <div class="flex flex-col md:flex-row justify-between items-start border-b-2 border-brand-600 pb-6 mb-6">
-                    <div class="flex items-center gap-4">
-                        <img src="img/logo.png" alt="EPRESEDI S.A.S" class="h-20 w-auto object-contain" onerror="this.src=''; this.className='hidden'; document.getElementById('factura-logo-fallback').classList.remove('hidden');">
-                        <div id="factura-logo-fallback" class="hidden w-20 h-20 bg-brand-50 rounded-lg flex items-center justify-center border border-brand-100 text-brand-600">
+                <!-- Encabezado Principal Factura -->
+                <div class="flex justify-between items-start mb-6">
+                    <!-- Izquierda: Logo y Empresa -->
+                    <div class="w-1/2">
+                        <img src="img/logo.png" alt="EPRESEDI S.A.S" class="h-24 w-auto object-contain mb-3" onerror="this.src=''; this.className='hidden'; document.getElementById('factura-logo-fallback').classList.remove('hidden');">
+                        <div id="factura-logo-fallback" class="hidden w-24 h-24 mb-3 rounded-lg flex items-center justify-center border border-brand-100 text-brand-600">
                            <i class="fa-solid fa-building text-4xl"></i>
                         </div>
-                        <div>
-                            <h2 class="text-2xl font-bold text-gray-900 tracking-tight">EPRESEDI S.A.S</h2>
-                            <p class="text-sm text-gray-500">NIT: 900.453.470-7</p>
-                            <p class="text-xs text-gray-500 mt-1">Empresa Prestadora de Servicios Diversos</p>
-                            <p class="text-xs text-gray-500">Carepa - Colombia</p>
+                        <div class="text-[11px] leading-tight text-gray-600 space-y-0.5 mt-2 ml-1">
+                            <p>Barrio Calazans 1er piso calle 70 # 68A- 11</p>
+                            <p>NIT : 900.453.470-7</p>
+                            <p>Teléfono : 3218129965</p>
+                            <p class="text-blue-600">epresedisas.carepa@gmail.com</p>
                         </div>
                     </div>
                     
-                    <div class="mt-4 md:mt-0 text-right bg-slate-50 p-4 rounded-lg border border-slate-200">
-                        <h1 class="text-xl font-bold text-slate-800 uppercase">Factura de Venta</h1>
-                        <p class="text-2xl font-bold text-brand-600 tracking-wider">No. ${f.id}</p>
+                    <!-- Derecha: Datos Factura -->
+                    <div class="w-1/2 flex flex-col items-end">
+                        <h1 class="text-xl font-medium text-gray-800 mb-4 whitespace-nowrap">${tipoDoc} ${idFacturaDisplay}</h1>
                         
-                        <div class="mt-4 grid grid-cols-2 gap-x-6 gap-y-1 text-sm text-left">
-                            <span class="text-gray-500 font-medium">Generación:</span>
-                            <span class="text-gray-900 font-semibold">${formatDate(f.fecha)}</span>
-                            <span class="text-gray-500 font-medium">Vencimiento:</span>
-                            <span class="text-gray-900 font-semibold">${formatDate(f.fecha)}</span>
+                        <div class="border border-gray-300 w-full max-w-[320px] p-2 text-center text-sm text-gray-800 mb-4 shadow-sm bg-white">
+                            ${docLabel}<br>${idFacturaDisplay}
+                        </div>
+
+                        <div class="flex w-full max-w-[320px] justify-between text-[11px] text-gray-700">
+                            <div class="flex flex-col items-end w-[60%] space-y-2 pr-3">
+                                <div class="w-full flex justify-between"><span>Fecha :</span> <span>${formatDate(f.fecha)}</span></div>
+                                <div class="w-full flex justify-between"><span>Cajero:</span> <span class="uppercase">Epresedi S.A.S.</span></div>
+                                <div class="w-full flex justify-between"><span>Fecha de emisión:</span> <span>${formatDate(f.fecha)}</span></div>
+                                <div class="w-full flex justify-between"><span>Fecha de vencimiento:</span> <span>${formatDate(f.fecha)}</span></div>
+                            </div>
+                            <div class="w-[40%] flex justify-end">
+                                <!-- QR CODE PLACEHOLDER GENERADO CON API GRATUITA -->
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=Factura%20${idFacturaDisplay}%20EPRESEDI" alt="QR Code" class="h-20 w-20 object-contain ml-2">
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 bg-brand-50/30 p-5 rounded-lg border border-brand-100/50">
-                    <div>
-                        <p class="text-xs uppercase font-bold text-brand-600 tracking-wider mb-2">Cliente</p>
-                        <p class="text-lg font-bold text-gray-900 leading-tight">${f.cliente}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs uppercase font-bold text-brand-600 tracking-wider mb-2">Identificación / Contacto</p>
-                        <p class="text-md font-semibold text-gray-800 leading-tight">NIT / CC: ${f.nit || 'N/A'}</p>
-                        <p class="text-xs text-gray-500 mt-1">${f.contacto || ''}</p>
-                    </div>
-                </div>
+                <!-- Bloque de Contacto Cliente (Azul grisáceo) -->
+                <div class="bg-[#dce6f2] p-4 text-[12px] mb-6 border border-[#c1d3ec]">
+                    <div class="w-full md:w-2/3 grid grid-cols-[100px_1fr] gap-y-1">
+                        <span class="font-bold text-gray-800">Nombre:</span>
+                        <span class="text-gray-800">${f.cliente}</span>
 
-                <table class="w-full text-left border-collapse mb-8">
-                    <thead>
-                        <tr class="bg-slate-100 text-slate-700 text-xs uppercase tracking-wider border-y border-slate-200">
-                            <th class="py-3 px-4 font-semibold w-1/2">Ítem / Descripción</th>
-                            <th class="py-3 px-4 font-semibold text-center">Cant.</th>
-                            <th class="py-3 px-4 font-semibold text-right">Vlr. Unitario</th>
-                            <th class="py-3 px-4 font-semibold text-right">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${(f.items || [{descripcion: 'Servicio/Producto Anterior', cantidad: 1, valorUnitario: f.total, total: f.total}]).map(item => `
-                        <tr class="border-b border-gray-100">
-                            <td class="py-4 px-4">
-                                <span class="font-bold text-gray-800 block">${item.descripcion}</span>
-                            </td>
-                            <td class="py-4 px-4 text-center font-medium">${item.cantidad}</td>
-                            <td class="py-4 px-4 text-right text-gray-700">${formatMoney(item.valorUnitario)}</td>
-                            <td class="py-4 px-4 text-right font-bold text-gray-900">${formatMoney(item.total)}</td>
-                        </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
+                        <span class="font-bold text-gray-800">NIT/CC:</span>
+                        <span class="text-gray-800">${f.nit || 'N/D'}</span>
 
-                <div class="flex justify-end pt-4 pb-8">
-                    <div class="w-full md:w-1/3 bg-slate-50 p-5 rounded-lg border border-slate-200">
-                        <div class="flex justify-between items-center mb-3">
-                            <span class="text-sm font-medium text-gray-500">Subtotal</span>
-                            <span class="text-sm font-semibold text-gray-800">${formatMoney(f.total)}</span>
-                        </div>
-                        <div class="flex justify-between items-center mb-3 pb-3 border-b border-gray-200">
-                            <span class="text-sm font-medium text-gray-500">Impuestos</span>
-                            <span class="text-sm font-semibold text-gray-800">$ 0</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-lg font-bold text-gray-800">Total Neto</span>
-                            <span class="text-2xl font-bold text-brand-600">${formatMoney(f.total)}</span>
-                        </div>
+                        <span class="font-bold text-gray-800">Teléfono:</span>
+                        <span class="text-gray-800">${telefonoFactura}</span>
+
+                        <span class="font-bold text-gray-800">Correo:</span>
+                        <span class="text-gray-800">${correoFactura || 'N/D'}</span>
+
+                        <span class="font-bold text-gray-800">Dirección:</span>
+                        <span class="text-gray-800">${direccionFactura || 'N/D'}</span>
                     </div>
                 </div>
 
-                <div class="border-t border-gray-200 pt-6 mt-8 text-center text-xs text-gray-400">
-                    <p class="mb-1">Esta es una representación impresa de la factura de venta.</p>
-                    <p>Documento generado por EPRESEDI S.A.S. Sistema Inmobiliario.</p>
+                <!-- Tabla de Productos -->
+                <div class="w-full border shadow-sm border-gray-200 mb-6">
+                    <table class="w-full text-left text-[12px]">
+                        <thead class="bg-[#dce6f2] border-b border-[#c1d3ec]">
+                            <tr>
+                                <th class="py-2.5 px-3 font-bold text-gray-800 w-[15%]">Código</th>
+                                <th class="py-2.5 px-3 font-bold text-gray-800 w-[35%]">Descripción</th>
+                                <th class="py-2.5 px-3 font-bold text-gray-800 text-right w-[15%]">Precio</th>
+                                <th class="py-2.5 px-3 font-bold text-gray-800 text-center w-[10%]">Cantidad</th>
+                                <th class="py-2.5 px-3 font-bold text-gray-800 text-right w-[12%]">Subtotal</th>
+                                <th class="py-2.5 px-3 font-bold text-gray-800 text-right w-[13%]">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${(f.items || [{codigo: 'SRV-001', descripcion: 'Servicio Anterior', cantidad: 1, valorUnitario: f.total, total: f.total}]).map(item => `
+                            <tr class="border-b border-gray-100 last:border-0 bg-[#f8fbfe]">
+                                <td class="py-3 px-3 text-gray-700">${item.codigo || '001'}</td>
+                                <td class="py-3 px-3 text-gray-800">
+                                    <span class="block text-gray-800">${item.descripcion}</span>
+                                </td>
+                                <td class="py-3 px-3 text-right text-gray-700">${formatMoney(item.valorUnitario)}</td>
+                                <td class="py-3 px-3 text-center text-gray-700">${item.cantidad}</td>
+                                <td class="py-3 px-3 text-right text-gray-700">${formatMoney(item.total)}</td>
+                                <td class="py-3 px-3 text-right text-gray-800">${formatMoney(item.total)}</td>
+                            </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Totales (Subtotal / IVA / Total a Pagar) -->
+                <div class="flex justify-end pt-2 pb-6">
+                    <div class="w-full md:w-1/3 space-y-1.5 text-sm">
+                        <div class="flex justify-between items-center px-4">
+                            <span class="font-medium text-gray-700">Subtotal:</span>
+                            <span class="text-gray-800">${formatMoney(subtotalCalc)}</span>
+                        </div>
+                        <div class="flex justify-between items-center px-4 border-b border-gray-200 pb-2">
+                            <span class="font-medium text-gray-700">IVA (19%):</span>
+                            <span class="text-gray-800">${formatMoney(ivaCalc)}</span>
+                        </div>
+                        <div class="flex justify-between items-center px-4 pt-1">
+                            <span class="text-[17px] font-bold text-gray-900">Total a pagar:</span>
+                            <span class="text-[17px] font-bold text-gray-900">${formatMoney(f.total)}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
             
             <div class="h-20 print:hidden"></div>
-        `;
+        `
         document.getElementById('view-historial').innerHTML = html;
         document.querySelector('aside').classList.add('print:hidden');
     },

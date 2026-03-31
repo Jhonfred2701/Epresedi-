@@ -114,6 +114,14 @@ const SCHEMA_SQLITE = `
         contacto TEXT,
         total REAL DEFAULT 0,
         estado TEXT DEFAULT 'emitida',
+        tipo_documento TEXT DEFAULT 'Factura de servicios adicionales',
+        inmuebleId TEXT,
+        periodo_facturado TEXT,
+        metodo_pago TEXT,
+        referencia_pago TEXT,
+        banco_pago TEXT,
+        porcentaje_comision NUMERIC,
+        fecha_pago TEXT,
         FOREIGN KEY (clienteId) REFERENCES clientes(id) ON DELETE SET NULL
     );
     CREATE TABLE IF NOT EXISTS factura_items (
@@ -199,7 +207,15 @@ const SCHEMA_POSTGRES = `
         nit TEXT,
         contacto TEXT,
         total NUMERIC DEFAULT 0,
-        estado TEXT DEFAULT 'emitida'
+        estado TEXT DEFAULT 'emitida',
+        tipo_documento TEXT DEFAULT 'Factura de servicios adicionales',
+        "inmuebleId" TEXT,
+        periodo_facturado TEXT,
+        metodo_pago TEXT,
+        referencia_pago TEXT,
+        banco_pago TEXT,
+        porcentaje_comision NUMERIC,
+        fecha_pago TEXT
     );
     CREATE TABLE IF NOT EXISTS factura_items (
         id TEXT PRIMARY KEY,
@@ -239,6 +255,16 @@ const dbWrapper = {
             try { await pgPool.query(`ALTER TABLE productos ADD COLUMN id_categoria TEXT DEFAULT 'CAT-GEN'`); } catch(e){}
             try { await pgPool.query(`ALTER TABLE productos ADD COLUMN id_proveedor TEXT DEFAULT 'PROV-GEN'`); } catch(e){}
             try { await pgPool.query('ALTER TABLE productos ADD COLUMN fecha_creacion TEXT'); } catch(e){}
+
+            // Migraciones para Módulo de Ventas Inmobiliario (Facturas)
+            try { await pgPool.query(`ALTER TABLE facturas ADD COLUMN tipo_documento TEXT DEFAULT 'Factura de servicios adicionales'`); } catch(e){}
+            try { await pgPool.query(`ALTER TABLE facturas ADD COLUMN "inmuebleId" TEXT`); } catch(e){}
+            try { await pgPool.query(`ALTER TABLE facturas ADD COLUMN periodo_facturado TEXT`); } catch(e){}
+            try { await pgPool.query(`ALTER TABLE facturas ADD COLUMN metodo_pago TEXT`); } catch(e){}
+            try { await pgPool.query(`ALTER TABLE facturas ADD COLUMN referencia_pago TEXT`); } catch(e){}
+            try { await pgPool.query(`ALTER TABLE facturas ADD COLUMN banco_pago TEXT`); } catch(e){}
+            try { await pgPool.query(`ALTER TABLE facturas ADD COLUMN porcentaje_comision NUMERIC`); } catch(e){}
+            try { await pgPool.query(`ALTER TABLE facturas ADD COLUMN fecha_pago TEXT`); } catch(e){}
         } else {
             const sqlite3 = require('sqlite3').verbose();
             const { open } = require('sqlite');
@@ -255,6 +281,16 @@ const dbWrapper = {
             try { await sqliteDb.run(`ALTER TABLE productos ADD COLUMN id_categoria TEXT DEFAULT 'CAT-GEN'`); } catch(e){}
             try { await sqliteDb.run(`ALTER TABLE productos ADD COLUMN id_proveedor TEXT DEFAULT 'PROV-GEN'`); } catch(e){}
             try { await sqliteDb.run('ALTER TABLE productos ADD COLUMN fecha_creacion TEXT'); } catch(e){}
+
+            // Migraciones para Módulo de Ventas Inmobiliario (Facturas)
+            try { await sqliteDb.run(`ALTER TABLE facturas ADD COLUMN tipo_documento TEXT DEFAULT 'Factura de servicios adicionales'`); } catch(e){}
+            try { await sqliteDb.run(`ALTER TABLE facturas ADD COLUMN inmuebleId TEXT`); } catch(e){}
+            try { await sqliteDb.run(`ALTER TABLE facturas ADD COLUMN periodo_facturado TEXT`); } catch(e){}
+            try { await sqliteDb.run(`ALTER TABLE facturas ADD COLUMN metodo_pago TEXT`); } catch(e){}
+            try { await sqliteDb.run(`ALTER TABLE facturas ADD COLUMN referencia_pago TEXT`); } catch(e){}
+            try { await sqliteDb.run(`ALTER TABLE facturas ADD COLUMN banco_pago TEXT`); } catch(e){}
+            try { await sqliteDb.run(`ALTER TABLE facturas ADD COLUMN porcentaje_comision NUMERIC`); } catch(e){}
+            try { await sqliteDb.run(`ALTER TABLE facturas ADD COLUMN fecha_pago TEXT`); } catch(e){}
         }
     },
 
