@@ -107,6 +107,12 @@ const SCHEMA_SQLITE = `
     );
     CREATE TABLE IF NOT EXISTS facturas (
         id TEXT PRIMARY KEY,
+        -- Número de factura con formato prefijo-consecutivo (ej: AR-00001)
+        numero_factura TEXT UNIQUE,
+        -- Prefijo del tipo de documento: AR, CO, CP, PE, SA
+        prefijo TEXT,
+        -- Número correlativo solo del consecutivo (número entero)
+        consecutivo INTEGER,
         fecha TEXT NOT NULL,
         clienteId TEXT,
         cliente TEXT,
@@ -134,6 +140,15 @@ const SCHEMA_SQLITE = `
         total REAL,
         FOREIGN KEY (factura_id) REFERENCES facturas(id) ON DELETE CASCADE
     );
+    -- Tabla de control de consecutivos por tipo de documento
+    -- Cada prefijo mantiene su propio contador independiente
+    CREATE TABLE IF NOT EXISTS factura_consecutivos (
+        prefijo TEXT PRIMARY KEY,  -- 'AR', 'CO', 'CP', 'PE', 'SA'
+        ultimo  INTEGER DEFAULT 0  -- último consecutivo usado
+    );
+    -- Sembrar los 5 prefijos si aún no existen
+    INSERT OR IGNORE INTO factura_consecutivos (prefijo, ultimo) VALUES
+        ('AR', 0), ('CO', 0), ('CP', 0), ('PE', 0), ('SA', 0);
     CREATE TABLE IF NOT EXISTS usuarios (
         id TEXT PRIMARY KEY,
         nombre TEXT,
@@ -201,6 +216,12 @@ const SCHEMA_POSTGRES = `
     );
     CREATE TABLE IF NOT EXISTS facturas (
         id TEXT PRIMARY KEY,
+        -- Número de factura con formato prefijo-consecutivo (ej: AR-00001)
+        numero_factura TEXT UNIQUE,
+        -- Prefijo del tipo de documento: AR, CO, CP, PE, SA
+        prefijo TEXT,
+        -- Número correlativo solo del consecutivo (número entero)
+        consecutivo INTEGER,
         fecha TEXT NOT NULL,
         "clienteId" TEXT REFERENCES clientes(id) ON DELETE SET NULL,
         cliente TEXT,
@@ -226,6 +247,16 @@ const SCHEMA_POSTGRES = `
         "valorUnitario" NUMERIC,
         total NUMERIC
     );
+    -- Tabla de control de consecutivos por tipo de documento
+    -- Cada prefijo mantiene su propio contador independiente
+    CREATE TABLE IF NOT EXISTS factura_consecutivos (
+        prefijo TEXT PRIMARY KEY,  -- 'AR', 'CO', 'CP', 'PE', 'SA'
+        ultimo  INTEGER DEFAULT 0  -- último consecutivo usado
+    );
+    -- Sembrar los 5 prefijos si aún no existen
+    INSERT INTO factura_consecutivos (prefijo, ultimo) VALUES
+        ('AR', 0), ('CO', 0), ('CP', 0), ('PE', 0), ('SA', 0)
+    ON CONFLICT (prefijo) DO NOTHING;
     CREATE TABLE IF NOT EXISTS usuarios (
         id TEXT PRIMARY KEY,
         nombre TEXT,
@@ -265,6 +296,24 @@ const dbWrapper = {
             try { await pgPool.query(`ALTER TABLE facturas ADD COLUMN banco_pago TEXT`); } catch(e){}
             try { await pgPool.query(`ALTER TABLE facturas ADD COLUMN porcentaje_comision NUMERIC`); } catch(e){}
             try { await pgPool.query(`ALTER TABLE facturas ADD COLUMN fecha_pago TEXT`); } catch(e){}
+            // Migraciones para Numeración Automática de Facturas
+            try { await pgPool.query(`ALTER TABLE facturas ADD COLUMN numero_factura TEXT`); } catch(e){}
+            try { await pgPool.query(`ALTER TABLE facturas ADD COLUMN prefijo TEXT`); } catch(e){}
+            try { await pgPool.query(`ALTER TABLE facturas ADD COLUMN consecutivo INTEGER`); } catch(e){}
+            // Crear tabla de consecutivos y sembrar prefijos (si aún no existe)
+            try {
+                await pgPool.query(`
+                    CREATE TABLE IF NOT EXISTS factura_consecutivos (
+                        prefijo TEXT PRIMARY KEY,
+                        ultimo  INTEGER DEFAULT 0
+                    )
+                `);
+                await pgPool.query(`
+                    INSERT INTO factura_consecutivos (prefijo, ultimo) VALUES
+                        ('AR', 0), ('CO', 0), ('CP', 0), ('PE', 0), ('SA', 0)
+                    ON CONFLICT (prefijo) DO NOTHING
+                `);
+            } catch(e){ console.error('Error creando factura_consecutivos en PG:', e); }
         } else {
             const sqlite3 = require('sqlite3').verbose();
             const { open } = require('sqlite');
@@ -291,6 +340,24 @@ const dbWrapper = {
             try { await sqliteDb.run(`ALTER TABLE facturas ADD COLUMN banco_pago TEXT`); } catch(e){}
             try { await sqliteDb.run(`ALTER TABLE facturas ADD COLUMN porcentaje_comision NUMERIC`); } catch(e){}
             try { await sqliteDb.run(`ALTER TABLE facturas ADD COLUMN fecha_pago TEXT`); } catch(e){}
+            // Migraciones para Numeración Automática de Facturas
+            try { await sqliteDb.run(`ALTER TABLE facturas ADD COLUMN numero_factura TEXT`); } catch(e){}
+            try { await sqliteDb.run(`ALTER TABLE facturas ADD COLUMN prefijo TEXT`); } catch(e){}
+            try { await sqliteDb.run(`ALTER TABLE facturas ADD COLUMN consecutivo INTEGER`); } catch(e){}
+            // Crear tabla de consecutivos y sembrar prefijos (si aún no existe)
+            try {
+                await sqliteDb.run(`
+                    CREATE TABLE IF NOT EXISTS factura_consecutivos (
+                        prefijo TEXT PRIMARY KEY,
+                        ultimo  INTEGER DEFAULT 0
+                    )
+                `);
+                await sqliteDb.run(`INSERT OR IGNORE INTO factura_consecutivos (prefijo, ultimo) VALUES ('AR', 0)`);
+                await sqliteDb.run(`INSERT OR IGNORE INTO factura_consecutivos (prefijo, ultimo) VALUES ('CO', 0)`);
+                await sqliteDb.run(`INSERT OR IGNORE INTO factura_consecutivos (prefijo, ultimo) VALUES ('CP', 0)`);
+                await sqliteDb.run(`INSERT OR IGNORE INTO factura_consecutivos (prefijo, ultimo) VALUES ('PE', 0)`);
+                await sqliteDb.run(`INSERT OR IGNORE INTO factura_consecutivos (prefijo, ultimo) VALUES ('SA', 0)`);
+            } catch(e){ console.error('Error creando factura_consecutivos en SQLite:', e); }
         }
     },
 

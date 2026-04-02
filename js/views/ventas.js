@@ -69,14 +69,16 @@ const VentasView = {
             activeBtn.classList.remove('border-gray-200');
         }
 
-        // Load form based on type
+        // Cargar formulario según tipo y luego previsualizar el número
         switch (tipo) {
-            case 'canon':       this.renderFormCanon(); break;
-            case 'comision':    this.renderFormComision(); break;
+            case 'canon':       this.renderFormCanon();       break;
+            case 'comision':    this.renderFormComision();    break;
             case 'comprobante': this.renderFormComprobante(); break;
             case 'electronico': this.renderFormElectronico(); break;
-            case 'servicios':   this.renderFormServicios(); break;
+            case 'servicios':   this.renderFormServicios();   break;
         }
+        // Actualizar el campo de número de documento después de renderizar el form
+        setTimeout(() => this._actualizarNumeroPreview(), 50);
     },
 
     // ─── Shared form wrapper ───────────────────────────────────────────────────
@@ -122,6 +124,19 @@ const VentasView = {
                             <h4 class="font-semibold text-gray-700 mb-3 pb-2 border-b border-gray-200 flex items-center gap-2">
                                 <i class="fa-solid fa-file-invoice text-brand-600"></i> Información del Documento
                             </h4>
+                        </div>
+                        <!-- Número de documento generado automáticamente -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                <i class="fa-solid fa-hashtag text-brand-500 mr-1"></i>Número de Documento
+                            </label>
+                            <div class="flex items-center gap-2">
+                                <input type="text" id="v-numero-factura" readonly
+                                    class="w-full border border-brand-300 bg-brand-50 rounded-lg px-3 py-2 text-sm font-bold text-brand-700 tracking-wider cursor-not-allowed"
+                                    placeholder="Cargando..." title="Generado automáticamente al guardar">
+                                <span class="text-xs text-gray-400 whitespace-nowrap">Auto</span>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-0.5">Se genera automáticamente al guardar</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de Emisión *</label>
@@ -410,6 +425,30 @@ const VentasView = {
 
     // ─── Helpers ───────────────────────────────────────────────────────────────
 
+    /**
+     * Consulta el próximo número de factura al servidor según el tipo de documento
+     * actualmente seleccionado y lo muestra en el campo 'v-numero-factura'.
+     * No modifica el contador, solo previsualiza.
+     */
+    async _actualizarNumeroPreview() {
+        const tipoEl = document.getElementById('v-tipo-doc');
+        if (!tipoEl) return;
+        const tipo = tipoEl.value || 'Factura de servicios adicionales';
+
+        const el = document.getElementById('v-numero-factura');
+        if (!el) return;
+
+        try {
+            el.value = 'Cargando...';
+            const res = await fetch(`/api/facturas/preview-numero?tipo=${encodeURIComponent(tipo)}`);
+            const data = await res.json();
+            el.value = data.numero || '---';
+        } catch (e) {
+            el.value = 'Error';
+            console.warn('No se pudo obtener preview de número:', e);
+        }
+    },
+
     _setToday() {
         const today = new Intl.DateTimeFormat('fr-CA', { timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
         const el = document.getElementById('v-fecha');
@@ -664,8 +703,10 @@ const VentasView = {
         };
 
         try {
-            await Store.addFactura(factura);
-            showToast(`✅ ${tipoDoc} emitida correctamente`);
+            // El servidor retorna el objeto con numero_factura generado
+            const resultado = await Store.addFactura(factura);
+            const numero = resultado.numero_factura || resultado.id || '';
+            showToast(`✅ ${tipoDoc} emitida — N° ${numero}`);
             window.location.hash = '#historial';
         } catch (e) {
             console.error(e);
