@@ -140,19 +140,12 @@ app.delete('/api/clientes/:id', async (req, res) => {
 // =======================
 // CATEGORIAS & PROVEEDORES
 // =======================
-app.get('/api/categorias', async (req, res) => {
-    try {
-        const [rows] = await db.query('SELECT * FROM categorias ORDER BY nombre ASC');
-        res.json(rows);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
+const categoriasRoutes = require('./routes/categoriasRoutes');
+app.use('/api/categorias', categoriasRoutes);
 
-app.get('/api/proveedores', async (req, res) => {
-    try {
-        const [rows] = await db.query('SELECT * FROM proveedores ORDER BY nombre ASC');
-        res.json(rows);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
+
+const proveedoresRoutes = require('./routes/proveedoresRoutes');
+app.use('/api/proveedores', proveedoresRoutes);
 
 // =======================
 // PRODUCTOS (CRUD)

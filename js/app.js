@@ -92,6 +92,14 @@ const App = {
                 document.getElementById('view-productos').classList.add('active');
                 if(typeof ProductosView !== 'undefined') ProductosView.render();
                 break;
+            case '#categorias':
+                document.getElementById('view-categorias').classList.add('active');
+                if(typeof CategoriasView !== 'undefined') CategoriasView.render();
+                break;
+            case '#proveedores':
+                document.getElementById('view-proveedores').classList.add('active');
+                if(typeof ProveedoresView !== 'undefined') ProveedoresView.render();
+                break;
             case '#clientes':
                 document.getElementById('view-clientes').classList.add('active');
                 if(typeof ClientesView !== 'undefined') ClientesView.render();

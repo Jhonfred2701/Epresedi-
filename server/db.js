@@ -68,15 +68,22 @@ const SCHEMA_SQLITE = `
     );
     CREATE TABLE IF NOT EXISTS categorias (
         id TEXT PRIMARY KEY,
-        nombre TEXT NOT NULL,
-        descripcion TEXT
+        nombre TEXT NOT NULL UNIQUE,
+        descripcion TEXT,
+        -- Estado de la categoría: Activo / Inactivo
+        estado TEXT DEFAULT 'Activo',
+        -- Fecha de creación en formato YYYY-MM-DD
+        fecha_creacion TEXT
     );
     INSERT OR IGNORE INTO categorias (id, nombre, descripcion) VALUES ('CAT-GEN', 'General', 'Categoría por defecto');
     CREATE TABLE IF NOT EXISTS proveedores (
         id TEXT PRIMARY KEY,
         nombre TEXT NOT NULL,
         contacto TEXT,
-        telefono TEXT
+        telefono TEXT,
+        correo TEXT UNIQUE,
+        direccion TEXT,
+        fecha_creacion TEXT
     );
     INSERT OR IGNORE INTO proveedores (id, nombre, contacto, telefono) VALUES ('PROV-GEN', 'Proveedor General', 'Administrador', '0000000000');
     CREATE TABLE IF NOT EXISTS productos (
@@ -179,15 +186,22 @@ const SCHEMA_POSTGRES = `
     );
     CREATE TABLE IF NOT EXISTS categorias (
         id TEXT PRIMARY KEY,
-        nombre TEXT NOT NULL,
-        descripcion TEXT
+        nombre TEXT NOT NULL UNIQUE,
+        descripcion TEXT,
+        -- Estado de la categoría: Activo / Inactivo
+        estado TEXT DEFAULT 'Activo',
+        -- Fecha de creación en formato YYYY-MM-DD
+        fecha_creacion TEXT
     );
     INSERT INTO categorias (id, nombre, descripcion) VALUES ('CAT-GEN', 'General', 'Categoría por defecto') ON CONFLICT (id) DO NOTHING;
     CREATE TABLE IF NOT EXISTS proveedores (
         id TEXT PRIMARY KEY,
         nombre TEXT NOT NULL,
         contacto TEXT,
-        telefono TEXT
+        telefono TEXT,
+        correo TEXT UNIQUE,
+        direccion TEXT,
+        fecha_creacion TEXT
     );
     INSERT INTO proveedores (id, nombre, contacto, telefono) VALUES ('PROV-GEN', 'Proveedor General', 'Administrador', '0000000000') ON CONFLICT (id) DO NOTHING;
     CREATE TABLE IF NOT EXISTS productos (
@@ -287,6 +301,15 @@ const dbWrapper = {
             try { await pgPool.query(`ALTER TABLE productos ADD COLUMN id_proveedor TEXT DEFAULT 'PROV-GEN'`); } catch(e){}
             try { await pgPool.query('ALTER TABLE productos ADD COLUMN fecha_creacion TEXT'); } catch(e){}
 
+            // Migraciones para Categorías
+            try { await pgPool.query(`ALTER TABLE categorias ADD COLUMN estado TEXT DEFAULT 'Activo'`); } catch(e){}
+            try { await pgPool.query(`ALTER TABLE categorias ADD COLUMN fecha_creacion TEXT`); } catch(e){}
+
+            // Migraciones para Proveedores
+            try { await pgPool.query(`ALTER TABLE proveedores ADD COLUMN correo TEXT UNIQUE`); } catch(e){}
+            try { await pgPool.query(`ALTER TABLE proveedores ADD COLUMN direccion TEXT`); } catch(e){}
+            try { await pgPool.query(`ALTER TABLE proveedores ADD COLUMN fecha_creacion TEXT`); } catch(e){}
+
             // Migraciones para Módulo de Ventas Inmobiliario (Facturas)
             try { await pgPool.query(`ALTER TABLE facturas ADD COLUMN tipo_documento TEXT DEFAULT 'Factura de servicios adicionales'`); } catch(e){}
             try { await pgPool.query(`ALTER TABLE facturas ADD COLUMN "inmuebleId" TEXT`); } catch(e){}
@@ -330,6 +353,15 @@ const dbWrapper = {
             try { await sqliteDb.run(`ALTER TABLE productos ADD COLUMN id_categoria TEXT DEFAULT 'CAT-GEN'`); } catch(e){}
             try { await sqliteDb.run(`ALTER TABLE productos ADD COLUMN id_proveedor TEXT DEFAULT 'PROV-GEN'`); } catch(e){}
             try { await sqliteDb.run('ALTER TABLE productos ADD COLUMN fecha_creacion TEXT'); } catch(e){}
+
+            // Migraciones para Categorías
+            try { await sqliteDb.run(`ALTER TABLE categorias ADD COLUMN estado TEXT DEFAULT 'Activo'`); } catch(e){}
+            try { await sqliteDb.run(`ALTER TABLE categorias ADD COLUMN fecha_creacion TEXT`); } catch(e){}
+
+            // Migraciones para Proveedores
+            try { await sqliteDb.run(`ALTER TABLE proveedores ADD COLUMN correo TEXT UNIQUE`); } catch(e){}
+            try { await sqliteDb.run(`ALTER TABLE proveedores ADD COLUMN direccion TEXT`); } catch(e){}
+            try { await sqliteDb.run(`ALTER TABLE proveedores ADD COLUMN fecha_creacion TEXT`); } catch(e){}
 
             // Migraciones para Módulo de Ventas Inmobiliario (Facturas)
             try { await sqliteDb.run(`ALTER TABLE facturas ADD COLUMN tipo_documento TEXT DEFAULT 'Factura de servicios adicionales'`); } catch(e){}

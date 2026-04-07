@@ -126,11 +126,59 @@ const Store = {
             return await res.json();
         } catch (e) { return []; }
     },
+    async addCategoria(data) {
+        const res = await fetch(`${this.API_URL}/categorias`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const json = await res.json();
+        if (json.error) throw new Error(json.error);
+        return json;
+    },
+    async updateCategoria(id, data) {
+        const res = await fetch(`${this.API_URL}/categorias/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const json = await res.json();
+        if (json.error) throw new Error(json.error);
+    },
+    async deleteCategoria(id) {
+        const res = await fetch(`${this.API_URL}/categorias/${id}`, { method: 'DELETE' });
+        const json = await res.json();
+        if (json.error) throw new Error(json.error);
+    },
     async getProveedores() { 
         try {
             const res = await fetch(`${this.API_URL}/proveedores`);
             return await res.json();
         } catch (e) { return []; }
+    },
+    async addProveedor(data) {
+        const res = await fetch(`${this.API_URL}/proveedores`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const json = await res.json();
+        if (json.error) throw new Error(json.error);
+        return json;
+    },
+    async updateProveedor(id, data) {
+        const res = await fetch(`${this.API_URL}/proveedores/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const json = await res.json();
+        if (json.error) throw new Error(json.error);
+    },
+    async deleteProveedor(id) {
+        const res = await fetch(`${this.API_URL}/proveedores/${id}`, { method: 'DELETE' });
+        const json = await res.json();
+        if (json.error) throw new Error(json.error);
     },
 
     // PRODUCTOS
