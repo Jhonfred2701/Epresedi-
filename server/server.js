@@ -147,6 +147,9 @@ app.use('/api/categorias', categoriasRoutes);
 const proveedoresRoutes = require('./routes/proveedoresRoutes');
 app.use('/api/proveedores', proveedoresRoutes);
 
+const comprasRoutes = require('./routes/comprasRoutes');
+app.use('/api/compras', comprasRoutes);
+
 // =======================
 // PRODUCTOS (CRUD)
 // =======================

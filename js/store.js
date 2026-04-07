@@ -181,6 +181,32 @@ const Store = {
         if (json.error) throw new Error(json.error);
     },
 
+    // COMPRAS
+    async getCompras() { 
+        try {
+            const res = await fetch(`${this.API_URL}/compras`);
+            return await res.json();
+        } catch (e) { return []; }
+    },
+    async getCompraById(id) {
+        try {
+            const res = await fetch(`${this.API_URL}/compras/${id}`);
+            const json = await res.json();
+            if (json.error) throw new Error(json.error);
+            return json;
+        } catch (e) { return null; }
+    },
+    async addCompra(data) {
+        const res = await fetch(`${this.API_URL}/compras`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const json = await res.json();
+        if (json.error) throw new Error(json.error);
+        return json;
+    },
+
     // PRODUCTOS
     async getProductos() { 
         try {

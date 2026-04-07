@@ -100,6 +100,10 @@ const App = {
                 document.getElementById('view-proveedores').classList.add('active');
                 if(typeof ProveedoresView !== 'undefined') ProveedoresView.render();
                 break;
+            case '#compras':
+                document.getElementById('view-compras').classList.add('active');
+                if(typeof ComprasView !== 'undefined') ComprasView.render();
+                break;
             case '#clientes':
                 document.getElementById('view-clientes').classList.add('active');
                 if(typeof ClientesView !== 'undefined') ClientesView.render();

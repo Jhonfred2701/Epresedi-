@@ -147,6 +147,23 @@ const SCHEMA_SQLITE = `
         total REAL,
         FOREIGN KEY (factura_id) REFERENCES facturas(id) ON DELETE CASCADE
     );
+    CREATE TABLE IF NOT EXISTS compras (
+        id TEXT PRIMARY KEY,
+        id_proveedor TEXT,
+        fecha_compra TEXT,
+        total_compra REAL DEFAULT 0,
+        FOREIGN KEY (id_proveedor) REFERENCES proveedores(id) ON DELETE SET NULL
+    );
+    CREATE TABLE IF NOT EXISTS detalle_compra (
+        id TEXT PRIMARY KEY,
+        id_compra TEXT NOT NULL,
+        id_producto TEXT,
+        cantidad INTEGER DEFAULT 1,
+        precio_compra REAL DEFAULT 0,
+        subtotal REAL DEFAULT 0,
+        FOREIGN KEY (id_compra) REFERENCES compras(id) ON DELETE CASCADE,
+        FOREIGN KEY (id_producto) REFERENCES productos(id) ON DELETE SET NULL
+    );
     -- Tabla de control de consecutivos por tipo de documento
     -- Cada prefijo mantiene su propio contador independiente
     CREATE TABLE IF NOT EXISTS factura_consecutivos (
@@ -260,6 +277,20 @@ const SCHEMA_POSTGRES = `
         cantidad INTEGER DEFAULT 1,
         "valorUnitario" NUMERIC,
         total NUMERIC
+    );
+    CREATE TABLE IF NOT EXISTS compras (
+        id TEXT PRIMARY KEY,
+        id_proveedor TEXT REFERENCES proveedores(id) ON DELETE SET NULL,
+        fecha_compra TEXT,
+        total_compra NUMERIC DEFAULT 0
+    );
+    CREATE TABLE IF NOT EXISTS detalle_compra (
+        id TEXT PRIMARY KEY,
+        id_compra TEXT NOT NULL REFERENCES compras(id) ON DELETE CASCADE,
+        id_producto TEXT REFERENCES productos(id) ON DELETE SET NULL,
+        cantidad INTEGER DEFAULT 1,
+        precio_compra NUMERIC DEFAULT 0,
+        subtotal NUMERIC DEFAULT 0
     );
     -- Tabla de control de consecutivos por tipo de documento
     -- Cada prefijo mantiene su propio contador independiente
