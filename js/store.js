@@ -80,17 +80,23 @@ const Store = {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
-        return await res.json();
+        const json = await res.json();
+        if (json.error) throw new Error(json.error);
+        return json;
     },
     async updateCliente(id, data) {
-        await fetch(`${this.API_URL}/clientes/${id}`, {
+        const res = await fetch(`${this.API_URL}/clientes/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
+        const json = await res.json();
+        if (json.error) throw new Error(json.error);
     },
     async deleteCliente(id) {
-        await fetch(`${this.API_URL}/clientes/${id}`, { method: 'DELETE' });
+        const res = await fetch(`${this.API_URL}/clientes/${id}`, { method: 'DELETE' });
+        const json = await res.json();
+        if (json.error) throw new Error(json.error);
     },
 
     // INMUEBLES

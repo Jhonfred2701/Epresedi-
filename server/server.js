@@ -101,41 +101,10 @@ app.delete('/api/usuarios/:id', async (req, res) => {
 });
 
 // =======================
-// CLIENTES (CRUD)
+// CLIENTES (CRUD - MVC)
 // =======================
-app.get('/api/clientes', async (req, res) => {
-    try {
-        const [rows] = await db.query('SELECT * FROM clientes ORDER BY nombre ASC');
-        res.json(rows);
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.post('/api/clientes', async (req, res) => {
-    try {
-        const c = req.body;
-        const id = 'C' + Date.now();
-        await db.query(`INSERT INTO clientes (id, tipo_persona, estado, nombre, tipo_doc, nit, fecha_registro, telefono, correo, direccion, ciudad, departamento, codigo_postal) 
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
-        [id, c.tipo_persona, c.estado, c.nombre, c.tipo_doc, c.nit, c.fecha_registro, c.telefono, c.correo, c.direccion, c.ciudad, c.departamento, c.codigo_postal]);
-        res.json({ id, ...c });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.put('/api/clientes/:id', async (req, res) => {
-    try {
-        const c = req.body;
-        await db.query(`UPDATE clientes SET tipo_persona=?, estado=?, nombre=?, tipo_doc=?, nit=?, fecha_registro=?, telefono=?, correo=?, direccion=?, ciudad=?, departamento=?, codigo_postal=? WHERE id=?`, 
-        [c.tipo_persona, c.estado, c.nombre, c.tipo_doc, c.nit, c.fecha_registro, c.telefono, c.correo, c.direccion, c.ciudad, c.departamento, c.codigo_postal, req.params.id]);
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.delete('/api/clientes/:id', async (req, res) => {
-    try {
-        await db.query('DELETE FROM clientes WHERE id = ?', [req.params.id]);
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
+const clientesRoutes = require('./routes/clientesRoutes');
+app.use('/api/clientes', clientesRoutes);
 
 // =======================
 // CATEGORIAS & PROVEEDORES
